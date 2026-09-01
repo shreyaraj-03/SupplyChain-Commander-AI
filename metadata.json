@@ -1,0 +1,6 @@
+{
+  "name": "SupplyChain Commander AI",
+  "description": "Autonomous multi-agent supply chain disruption investigation, impact analytics, inventory redistribution, and deterministic recovery optimization platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
