@@ -33,4 +33,3 @@ python3 backend/run_investigation.py '{"disruption_id":"DISR_001"}'
 
 # Verify local backend API
 curl -s http://localhost:3000/api/health
-```
