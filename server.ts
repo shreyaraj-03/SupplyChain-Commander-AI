@@ -13,14 +13,18 @@ import fs from 'fs';
 // In-memory cache of investigations for instant UI responsiveness
 const investigationsStore: Record<string, any> = {};
 
-function runPythonRiskDetection(payloadObj: any): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const payload = JSON.stringify(payloadObj);
-    const scriptPath = path.join(process.cwd(), 'backend', 'run_risk_detection.py');
-    const pythonBin = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
-    const py = spawn(pythonBin, [scriptPath]);
+function getPythonBin(): string {
+  if (process.env.PYTHON_BIN) {
+    return process.env.PYTHON_BIN;
+  }
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
 
-    py.stdin.write(payload);
+function runPythonRiskDetection(inputPayload: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.join(process.cwd(), 'backend', 'run_risk_detection.py');
+    const pythonBin = getPythonBin();
+    const py = spawn(pythonBin, [scriptPath, JSON.stringify(inputPayload)]);
     py.stdin.end();
 
     let stdout = '';
@@ -49,7 +53,12 @@ function runPythonRiskDetection(payloadObj: any): Promise<any> {
   });
 }
 
-function runPythonInvestigation(disruptionId: string, weights?: Record<string, number>): Promise<any> {
+function runPythonInvestigation(disruptionId: string, weights?: Record<string, number>, forceRefresh: boolean = false): Promise<any> {
+  const cacheKey = `${disruptionId}__${JSON.stringify(weights || {})}`;
+  if (!forceRefresh && investigationsStore[cacheKey]) {
+    return Promise.resolve(investigationsStore[cacheKey]);
+  }
+
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
       disruption_id: disruptionId,
@@ -62,7 +71,7 @@ function runPythonInvestigation(disruptionId: string, weights?: Record<string, n
     });
 
     const scriptPath = path.join(process.cwd(), 'backend', 'run_investigation.py');
-    const pythonBin = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const pythonBin = getPythonBin();
     const py = spawn(pythonBin, [scriptPath]);
 
     py.stdin.write(payload);
@@ -86,6 +95,7 @@ function runPythonInvestigation(disruptionId: string, weights?: Record<string, n
       }
       try {
         const result = JSON.parse(stdout);
+        investigationsStore[cacheKey] = result;
         resolve(result);
       } catch (err) {
         reject(new Error(`Failed to parse Python agent output: ${stdout}`));
@@ -134,7 +144,7 @@ function getMergedDisruptions(): any[] {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   app.use(express.json());
 
@@ -149,9 +159,22 @@ async function startServer() {
     });
   });
 
+function prewarmActiveDisruptions(list: any[]) {
+  if (!list || list.length === 0) return;
+  const toWarm = list.slice(0, 3);
+  for (const d of toWarm) {
+    if (!d.disruption_id) continue;
+    const cacheKey = `${d.disruption_id}__${JSON.stringify({})}`;
+    if (!investigationsStore[cacheKey]) {
+      runPythonInvestigation(d.disruption_id).catch(() => {});
+    }
+  }
+}
+
   // Disruptions list (Merged static + dynamic data-detected)
   app.get('/api/disruptions', (req, res) => {
     const list = getMergedDisruptions();
+    prewarmActiveDisruptions(list);
     res.json({
       success: true,
       count: list.length,
@@ -222,12 +245,12 @@ async function startServer() {
   // Trigger Multi-Agent Investigation via Python Commander Agent
   app.post('/api/investigations', async (req, res) => {
     try {
-      const { disruption_id, scoring_weights } = req.body;
+      const { disruption_id, scoring_weights, force_refresh } = req.body;
       if (!disruption_id) {
         return res.status(400).json({ success: false, error: 'disruption_id is required' });
       }
 
-      const investigation = await runPythonInvestigation(disruption_id, scoring_weights);
+      const investigation = await runPythonInvestigation(disruption_id, scoring_weights, !!force_refresh);
       if (investigation && investigation.investigation_id) {
         investigationsStore[investigation.investigation_id] = investigation;
       }

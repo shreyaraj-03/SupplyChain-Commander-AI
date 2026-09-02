@@ -49,7 +49,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -103,7 +103,7 @@
       "RSK_GAP_PROD_002_WH_BLR"
     ],
     "validation_score": 85.0,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -154,7 +154,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 78.4,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -209,9 +209,9 @@
       "RSK_SHIPMENT_SHP_7003"
     ],
     "validation_score": 95.5,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
-    "validated_at": "2026-09-02T11:58:30.433143+00:00",
-    "converted_at": "2026-09-02T11:58:30.471823+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "validated_at": "2026-09-02T18:12:59.217271+00:00",
+    "converted_at": "2026-09-02T18:12:59.765640+00:00",
     "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_004_WH_DEL",
     "dismissal_reason": null
   },
@@ -245,7 +245,7 @@
       "summary": "Daily demand for Laptop Pro X15 (Core i9 / 32GB) surged to 36.0 units/day (+68.0% over baseline of 21.4 units/day).",
       "drivers": [
         "Current daily demand of 36.0 units vs baseline of 21.4 units.",
-        "5 customer orders totaling 180 units in current active window.",
+        "5 customer orders totaling 180.0 units in current active window.",
         "Total order value exposure of \u20b915,300,000 across Bangalore Central Fulfillment Hub.",
         "Multi-Signal Correlation: Confirmed by 3 additional independent risk signals."
       ],
@@ -253,7 +253,7 @@
         "current_daily_demand": 36.0,
         "baseline_daily_demand": 21.428571428571427,
         "pct_increase": 0.6800000000000002,
-        "total_demanded": 180,
+        "total_demanded": 180.0,
         "total_order_value": 15300000.0,
         "order_count": 5
       }
@@ -264,7 +264,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -277,7 +277,7 @@
     "status": "MONITORING",
     "source": "DATA_ANALYSIS",
     "title": "Supply-Demand Gap: Laptop Pro X15 (Core i9 / 32GB) (Bangalore Central Fulfillment Hub)",
-    "description": "205-unit supply shortfall projected over 14 days for Laptop Pro X15 (Core i9 / 32GB) at Bangalore Central Fulfillment Hub.",
+    "description": "205.0-unit supply shortfall projected over 14 days for Laptop Pro X15 (Core i9 / 32GB) at Bangalore Central Fulfillment Hub.",
     "product_id": "PROD_001",
     "product_name": "Laptop Pro X15 (Core i9 / 32GB)",
     "warehouse_id": "WH_BLR",
@@ -297,11 +297,11 @@
       "baseline_value": 0.0,
       "threshold_value": 20.0,
       "unit": "units",
-      "summary": "Projected supply deficit of 205 units for Laptop Pro X15 (Core i9 / 32GB) over 14-day planning horizon at Bangalore Central Fulfillment Hub (Revenue exposure: \u20b917,425,000).",
+      "summary": "Projected supply deficit of 205.0 units for Laptop Pro X15 (Core i9 / 32GB) over 14-day planning horizon at Bangalore Central Fulfillment Hub (Revenue exposure: \u20b917,425,000).",
       "drivers": [
-        "Projected Total Demand: 300 units (180 committed orders + 120 safety buffer).",
+        "Projected Total Demand: 300.0 units (180.0 committed orders + 120 safety buffer).",
         "Projected Total Supply: 95 units (45 on hand + 50 incoming).",
-        "Net Supply Deficit: 205 units (68.3% deficit ratio).",
+        "Net Supply Deficit: 205.0 units (68.3% deficit ratio).",
         "Affects 5 customer orders (5 tier-1 SLA accounts) totaling \u20b917,425,000.",
         "Multi-Signal Correlation: Confirmed by 3 additional independent risk signals."
       ],
@@ -311,10 +311,10 @@
         "available_stock": 45,
         "incoming_stock": 50,
         "projected_supply": 95,
-        "committed_order_demand": 180,
+        "committed_order_demand": 180.0,
         "safety_stock": 120,
-        "projected_demand": 300,
-        "supply_gap": 205,
+        "projected_demand": 300.0,
+        "supply_gap": 205.0,
         "gap_ratio": 0.6833333333333333,
         "revenue_at_risk": 17425000.0
       }
@@ -325,7 +325,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -384,7 +384,7 @@
       "RSK_INVENTORY_PROD_002_WH_BLR"
     ],
     "validation_score": 89.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -397,7 +397,7 @@
     "status": "CONVERTED_TO_DISRUPTION",
     "source": "DATA_ANALYSIS",
     "title": "Supply-Demand Gap: Industrial IoT Gateway Router 5G (Delhi NCR Mega Logistics Depot)",
-    "description": "110-unit supply shortfall projected over 14 days for Industrial IoT Gateway Router 5G at Delhi NCR Mega Logistics Depot.",
+    "description": "110.0-unit supply shortfall projected over 14 days for Industrial IoT Gateway Router 5G at Delhi NCR Mega Logistics Depot.",
     "product_id": "PROD_004",
     "product_name": "Industrial IoT Gateway Router 5G",
     "warehouse_id": "WH_DEL",
@@ -417,11 +417,11 @@
       "baseline_value": 0.0,
       "threshold_value": 20.0,
       "unit": "units",
-      "summary": "Projected supply deficit of 110 units for Industrial IoT Gateway Router 5G over 14-day planning horizon at Delhi NCR Mega Logistics Depot (Revenue exposure: \u20b94,620,000).",
+      "summary": "Projected supply deficit of 110.0 units for Industrial IoT Gateway Router 5G over 14-day planning horizon at Delhi NCR Mega Logistics Depot (Revenue exposure: \u20b94,620,000).",
       "drivers": [
-        "Projected Total Demand: 135 units (75 committed orders + 60 safety buffer).",
+        "Projected Total Demand: 135.0 units (75.0 committed orders + 60 safety buffer).",
         "Projected Total Supply: 25 units (25 on hand + 0 incoming).",
-        "Net Supply Deficit: 110 units (81.5% deficit ratio).",
+        "Net Supply Deficit: 110.0 units (81.5% deficit ratio).",
         "Affects 2 customer orders (2 tier-1 SLA accounts) totaling \u20b94,620,000.",
         "Multi-Signal Correlation: Confirmed by 2 additional independent risk signals."
       ],
@@ -431,10 +431,10 @@
         "available_stock": 25,
         "incoming_stock": 0,
         "projected_supply": 25,
-        "committed_order_demand": 75,
+        "committed_order_demand": 75.0,
         "safety_stock": 60,
-        "projected_demand": 135,
-        "supply_gap": 110,
+        "projected_demand": 135.0,
+        "supply_gap": 110.0,
         "gap_ratio": 0.8148148148148148,
         "revenue_at_risk": 4620000.0
       }
@@ -444,9 +444,9 @@
       "RSK_SHIPMENT_SHP_7003"
     ],
     "validation_score": 98.4,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
-    "validated_at": "2026-09-02T11:58:30.433143+00:00",
-    "converted_at": "2026-09-02T11:58:30.477231+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "validated_at": "2026-09-02T18:12:59.217271+00:00",
+    "converted_at": "2026-09-02T18:12:59.773669+00:00",
     "associated_disruption_id": "DISR_AUTO_GAP_PROD_004_WH_DEL",
     "dismissal_reason": null
   },
@@ -502,7 +502,7 @@
       "RSK_GAP_PROD_001_WH_BLR"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -559,9 +559,9 @@
       "RSK_GAP_PROD_004_WH_DEL"
     ],
     "validation_score": 95.5,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
-    "validated_at": "2026-09-02T11:58:30.433143+00:00",
-    "converted_at": "2026-09-02T11:58:30.484453+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "validated_at": "2026-09-02T18:12:59.217271+00:00",
+    "converted_at": "2026-09-02T18:12:59.786031+00:00",
     "associated_disruption_id": "DISR_AUTO_SHIPMENT_SHP_7003",
     "dismissal_reason": null
   },
@@ -597,7 +597,7 @@
         "On-Time Delivery rate fell by 0.0 percentage points over 30-day window.",
         "Average shipment delay increased to 3.8 days across 340 recent purchase orders.",
         "Quality acceptance score at 94.0%.",
-        "Active delayed units in transit: 500 units."
+        "Active delayed units in transit: 500.0 units."
       ],
       "raw_details": {
         "baseline_otd": 0.82,
@@ -610,7 +610,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 59.2,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -662,7 +662,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 50.4,
-    "detected_at": "2026-09-02T11:58:30.431750+00:00",
+    "detected_at": "2026-09-02T18:12:59.215936+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,

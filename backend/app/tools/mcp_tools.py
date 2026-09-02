@@ -2,14 +2,113 @@ import json
 import os
 from typing import Dict, Any, List, Optional
 
-def _load_dataset() -> Dict[str, Any]:
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+import time
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+_dataset_cache: Optional[Dict[str, Any]] = None
+_last_fetch_time: float = 0.0
+CACHE_TTL_SECONDS = 300
+
+def _fetch_bq_table(client, project_id, dataset_name, tname):
+    try:
+        query = f"SELECT * FROM `{project_id}.{dataset_name}.{tname}`"
+        results = client.query(query).result()
+        rows = []
+        for row in results:
+            rdict = dict(row.items())
+            for k, v in rdict.items():
+                if hasattr(v, "isoformat"):
+                    rdict[k] = v.isoformat()
+                elif hasattr(v, "__float__"):
+                    rdict[k] = float(v)
+            rows.append(rdict)
+        return tname, rows
+    except Exception as err:
+        print(f"[BigQuery Ingress] Error querying table '{tname}': {err}")
+        return tname, []
+
+def _get_disk_cache_file() -> str:
+    return os.path.join(os.path.dirname(__file__), "..", "..", "data", "bq_cache.json")
+
+def _load_dataset(force_refresh: bool = False) -> Dict[str, Any]:
+    global _dataset_cache, _last_fetch_time
+    now = time.time()
+    
+    # 1. In-memory cache check
+    if not force_refresh and _dataset_cache is not None and (now - _last_fetch_time < CACHE_TTL_SECONDS):
+        return _dataset_cache
+
+    # 2. Disk cache check across separate subprocesses
+    disk_cache_path = _get_disk_cache_file()
+    if not force_refresh and os.path.exists(disk_cache_path):
+        try:
+            mtime = os.path.getmtime(disk_cache_path)
+            if (now - mtime) < CACHE_TTL_SECONDS:
+                with open(disk_cache_path, "r", encoding="utf-8") as f:
+                    _dataset_cache = json.load(f)
+                    _last_fetch_time = now
+                    return _dataset_cache
+        except Exception:
+            pass
+
+    # 3. Live BigQuery query via parallel threads
+    project_id = os.getenv("GCP_PROJECT_ID")
+    dataset_name = os.getenv("BIGQUERY_DATASET", "supply_chain_analytics")
+
+    if project_id:
+        try:
+            from google.cloud import bigquery
+            client = bigquery.Client(project=project_id)
+            
+            tables = [
+                "products",
+                "suppliers",
+                "warehouses",
+                "inventory",
+                "customer_orders",
+                "shipments",
+                "disruptions",
+                "supplier_performance"
+            ]
+            
+            bq_dataset: Dict[str, List[Dict[str, Any]]] = {}
+            with ThreadPoolExecutor(max_workers=len(tables)) as executor:
+                futures = [executor.submit(_fetch_bq_table, client, project_id, dataset_name, tname) for tname in tables]
+                for future in as_completed(futures):
+                    tname, rows = future.result()
+                    bq_dataset[tname] = rows
+                
+            if any(len(v) > 0 for v in bq_dataset.values()):
+                _dataset_cache = bq_dataset
+                _last_fetch_time = now
+                # Save to disk cache for fast inter-process reuse
+                try:
+                    with open(disk_cache_path, "w", encoding="utf-8") as f:
+                        json.dump(bq_dataset, f)
+                except Exception:
+                    pass
+                return _dataset_cache
+        except Exception as e:
+            print(f"[BigQuery Ingress] Falling back to local dataset cache ({e})")
+
+    # Local fallback
     dataset_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "dataset.json")
     if os.path.exists(dataset_path):
         with open(dataset_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    # Fallback to local import if needed
+            _dataset_cache = json.load(f)
+            _last_fetch_time = now
+            return _dataset_cache
     from backend.data.generate_synthetic_data import generate_datasets
-    return generate_datasets()
+    _dataset_cache = generate_datasets()
+    _last_fetch_time = now
+    return _dataset_cache
 
 class MCPTools:
     """

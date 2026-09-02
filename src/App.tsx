@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchDisruptions,
   fetchRisks,
@@ -79,6 +79,20 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-trigger autonomous risk scan when user switches to AI Risk Radar tab if no risks are loaded yet
+  const hasAutoScannedRef = useRef(false);
+  useEffect(() => {
+    if (
+      activePerspective === 'risks' &&
+      risks.length === 0 &&
+      !isScanning &&
+      !hasAutoScannedRef.current
+    ) {
+      hasAutoScannedRef.current = true;
+      runDetectionScan();
+    }
+  }, [activePerspective, risks.length, isScanning]);
 
   // Run autonomous risk scan
   const runDetectionScan = async () => {
