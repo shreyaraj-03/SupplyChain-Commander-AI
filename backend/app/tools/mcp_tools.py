@@ -23,6 +23,16 @@ class MCPTools:
         for d in dataset.get("disruptions", []):
             if d.get("disruption_id") == disruption_id:
                 return d
+        
+        # Check dynamic data-detected disruptions in RiskRepository
+        try:
+            from backend.app.risk_detection.risk_repository import RiskRepository
+            dyn = RiskRepository.get_disruption(disruption_id)
+            if dyn:
+                return dyn
+        except Exception:
+            pass
+            
         return None
 
     @staticmethod
@@ -210,3 +220,58 @@ class MCPTools:
             if p["supplier_id"] == supplier_id:
                 return p
         return None
+
+    @staticmethod
+    def get_inventory_days_of_supply(product_id: str, warehouse_id: str) -> Dict[str, Any]:
+        dataset = _load_dataset()
+        inv = next((i for i in dataset.get("inventory", []) if i["product_id"] == product_id and i["warehouse_id"] == warehouse_id), None)
+        if not inv:
+            return {"error": "Inventory record not found"}
+        
+        orders = [o for o in dataset.get("customer_orders", []) if o["product_id"] == product_id and o["warehouse_id"] == warehouse_id]
+        total_demand = sum(o.get("quantity", 0) for o in orders)
+        burn_rate = max(5.0, total_demand / 7.0 if total_demand > 0 else 10.0)
+        available = float(inv.get("available_quantity", 0))
+        days_of_supply = round(available / burn_rate, 1)
+        
+        return {
+            "product_id": product_id,
+            "warehouse_id": warehouse_id,
+            "available_quantity": available,
+            "safety_stock": inv.get("safety_stock", 50),
+            "burn_rate_daily": burn_rate,
+            "days_of_supply": days_of_supply,
+            "status": "CRITICAL" if days_of_supply < 3.0 else ("WARNING" if days_of_supply < 7.0 else "HEALTHY")
+        }
+
+    @staticmethod
+    def get_supply_demand_gap(product_id: str, warehouse_id: str, horizon_days: int = 14) -> Dict[str, Any]:
+        dataset = _load_dataset()
+        inv = next((i for i in dataset.get("inventory", []) if i["product_id"] == product_id and i["warehouse_id"] == warehouse_id), {})
+        available = int(inv.get("available_quantity", 0))
+        safety = int(inv.get("safety_stock", 50))
+        
+        shipments = [s for s in dataset.get("shipments", []) if s.get("product_id") == product_id and s.get("destination_warehouse") == warehouse_id and s.get("status") in ["IN_TRANSIT", "SCHEDULED"]]
+        incoming = sum(int(s.get("quantity", 0)) for s in shipments)
+        
+        orders = [o for o in dataset.get("customer_orders", []) if o.get("product_id") == product_id and o.get("warehouse_id") == warehouse_id]
+        order_demand = sum(int(o.get("quantity", 0)) for o in orders)
+        
+        projected_supply = available + incoming
+        projected_demand = order_demand + safety
+        gap = max(0, projected_demand - projected_supply)
+        
+        return {
+            "product_id": product_id,
+            "warehouse_id": warehouse_id,
+            "horizon_days": horizon_days,
+            "available_stock": available,
+            "incoming_supply": incoming,
+            "projected_supply": projected_supply,
+            "committed_demand": order_demand,
+            "safety_buffer": safety,
+            "projected_demand": projected_demand,
+            "supply_gap_units": gap,
+            "has_deficit": gap > 0
+        }
+

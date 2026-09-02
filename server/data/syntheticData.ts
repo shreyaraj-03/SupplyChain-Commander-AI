@@ -227,6 +227,26 @@ export const inventoryRecords: InventoryRecord[] = [
     in_transit_quantity: 0,
     safety_stock: 25,
     last_updated: '2026-08-22T00:00:00Z'
+  },
+  {
+    inventory_id: 'INV_010',
+    product_id: 'PROD_004',
+    warehouse_id: 'WH_DEL',
+    available_quantity: 25,
+    reserved_quantity: 75,
+    in_transit_quantity: 0,
+    safety_stock: 60,
+    last_updated: '2026-08-22T00:00:00Z'
+  },
+  {
+    inventory_id: 'INV_011',
+    product_id: 'PROD_004',
+    warehouse_id: 'WH_MUM',
+    available_quantity: 220,
+    reserved_quantity: 40,
+    in_transit_quantity: 0,
+    safety_stock: 50,
+    last_updated: '2026-08-22T00:00:00Z'
   }
 ];
 
@@ -296,6 +316,32 @@ export const customerOrders: CustomerOrder[] = [
     priority: 'HIGH',
     order_value: 2125000,
     status: 'DELAYED'
+  },
+  {
+    order_id: 'ORD_906',
+    product_id: 'PROD_004',
+    warehouse_id: 'WH_DEL',
+    customer_name: 'National Smart Grid Infrastructure',
+    customer_region: 'North Region (Delhi NCR)',
+    quantity: 40,
+    order_date: '2026-08-20',
+    promised_delivery_date: '2026-08-28',
+    priority: 'CRITICAL',
+    order_value: 1680000,
+    status: 'CONFIRMED'
+  },
+  {
+    order_id: 'ORD_907',
+    product_id: 'PROD_004',
+    warehouse_id: 'WH_DEL',
+    customer_name: 'Bharat Telecom Towers Limited',
+    customer_region: 'North Region (Punjab/Haryana)',
+    quantity: 35,
+    order_date: '2026-08-21',
+    promised_delivery_date: '2026-08-29',
+    priority: 'HIGH',
+    order_value: 1470000,
+    status: 'CONFIRMED'
   }
 ];
 
@@ -323,6 +369,18 @@ export const shipments: Shipment[] = [
     status: 'IN_TRANSIT',
     delay_days: 0,
     tracking_code: 'TRK-GAMMA-3320'
+  },
+  {
+    shipment_id: 'SHP_7003',
+    supplier_id: 'SUPP_DELTA',
+    product_id: 'PROD_004',
+    destination_warehouse: 'WH_DEL',
+    quantity: 120,
+    planned_arrival: '2026-08-22',
+    estimated_arrival: '2026-08-30',
+    status: 'DELAYED',
+    delay_days: 8,
+    tracking_code: 'TRK-DELTA-9904'
   }
 ];
 

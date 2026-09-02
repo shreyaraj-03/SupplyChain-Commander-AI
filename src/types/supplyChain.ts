@@ -230,6 +230,86 @@ export interface ExplanationResult {
   action_roadmap: ActionRoadmapStep[];
 }
 
+export interface RiskEvidence {
+  metric_name: string;
+  observed_value: number;
+  baseline_value: number;
+  threshold_value: number;
+  unit: string;
+  summary: string;
+  drivers: string[];
+  raw_details: Record<string, any>;
+}
+
+export type RiskType =
+  | 'DEMAND_SPIKE'
+  | 'INVENTORY_DEPLETION_RISK'
+  | 'SUPPLIER_PERFORMANCE_RISK'
+  | 'SHIPMENT_DELAY_RISK'
+  | 'SUPPLY_DEMAND_GAP'
+  | 'WAREHOUSE_CAPACITY_RISK';
+
+export type RiskSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type RiskStatus =
+  | 'DETECTED'
+  | 'VALIDATING'
+  | 'VALIDATED'
+  | 'CONVERTED_TO_DISRUPTION'
+  | 'MONITORING'
+  | 'DISMISSED'
+  | 'RESOLVED';
+
+export interface RiskSignal {
+  risk_id: string;
+  risk_type: RiskType;
+  severity: RiskSeverity;
+  status: RiskStatus;
+  source: string;
+  title: string;
+  description: string;
+  product_id?: string;
+  product_name?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
+  supplier_id?: string;
+  supplier_name?: string;
+  metric: string;
+  metric_value: number;
+  threshold: number;
+  confidence: number;
+  estimated_revenue_at_risk: number;
+  orders_affected_count: number;
+  days_to_impact?: number;
+  evidence?: RiskEvidence;
+  correlated_risk_ids: string[];
+  validation_score: number;
+  detected_at: string;
+  validated_at?: string;
+  converted_at?: string;
+  associated_disruption_id?: string;
+}
+
+export interface RiskDetectionRun {
+  run_id: string;
+  started_at: string;
+  completed_at: string;
+  duration_ms: number;
+  trigger_type: string;
+  products_analyzed_count: number;
+  inventory_records_analyzed_count: number;
+  orders_analyzed_count: number;
+  shipments_analyzed_count: number;
+  suppliers_analyzed_count: number;
+  total_risks_detected: number;
+  risks_by_type: Record<string, number>;
+  risks_by_severity: Record<string, number>;
+  validated_risks_count: number;
+  disruptions_created_count: number;
+  duplicates_suppressed_count: number;
+  status: string;
+}
+
 export interface Investigation {
   investigation_id: string;
   disruption_id: string;
@@ -247,4 +327,5 @@ export interface Investigation {
   explanation?: ExplanationResult;
   agent_logs: AgentExecutionLog[];
 }
+
 

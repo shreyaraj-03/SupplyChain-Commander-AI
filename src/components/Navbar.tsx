@@ -9,20 +9,22 @@ import {
   Layers
 } from 'lucide-react';
 
-export type ActivePerspective = 'operations' | 'agent';
+export type ActivePerspective = 'operations' | 'risks' | 'agent';
 
 interface NavbarProps {
   onRefresh?: () => void;
   isInvestigating?: boolean;
   activePerspective: ActivePerspective;
   onPerspectiveChange: (perspective: ActivePerspective) => void;
+  riskCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onRefresh,
   isInvestigating,
   activePerspective,
-  onPerspectiveChange
+  onPerspectiveChange,
+  riskCount = 0
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-lg">
@@ -43,31 +45,50 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* 2-Tab Perspective Switcher (Operations UI vs Agent Lab) */}
+        {/* 3-Tab Perspective Switcher (Operations UI vs AI Risk Radar vs Agent Lab) */}
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
           <button
             id="view-operations-tab"
             onClick={() => onPerspectiveChange('operations')}
-            className={`px-3.5 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
+            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
               activePerspective === 'operations'
                 ? 'bg-emerald-600 text-white shadow-md font-bold'
                 : 'text-slate-400 hover:text-white'
             }`}
-            title="Operations Center (Business User View)"
+            title="Operations Center (Incident Switchboard & Mitigations)"
           >
             <Briefcase className="w-3.5 h-3.5" />
             <span>Operations UI</span>
           </button>
 
           <button
+            id="view-risks-tab"
+            onClick={() => onPerspectiveChange('risks')}
+            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
+              activePerspective === 'risks'
+                ? 'bg-amber-600 text-white shadow-md font-bold'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="AI Detected Risks (Continuous BigQuery Early-Warning Radar)"
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>AI Risk Radar</span>
+            {riskCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                {riskCount}
+              </span>
+            )}
+          </button>
+
+          <button
             id="view-agent-tab"
             onClick={() => onPerspectiveChange('agent')}
-            className={`px-3.5 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
+            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
               activePerspective === 'agent'
                 ? 'bg-indigo-600 text-white shadow-md font-bold'
                 : 'text-slate-400 hover:text-white'
             }`}
-            title="Multi-Agent Lab (Architecture & BigQuery Inspector)"
+            title="Multi-Agent Lab (Architecture DAG & BigQuery Inspector)"
           >
             <Layers className="w-3.5 h-3.5" />
             <span>Agent Lab</span>

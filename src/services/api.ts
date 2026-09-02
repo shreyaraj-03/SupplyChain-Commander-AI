@@ -60,3 +60,40 @@ export async function runSimulation(
   const data = await res.json();
   return data.investigation;
 }
+
+export async function fetchRisks(filters?: Record<string, string>): Promise<any[]> {
+  const params = new URLSearchParams(filters || {});
+  const res = await fetch(`/api/risks?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch risk signals');
+  }
+  const data = await res.json();
+  return data.risks || [];
+}
+
+export async function runRiskDetectionScan(triggerType: string = 'MANUAL'): Promise<any> {
+  const res = await fetch('/api/risk-detection/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      trigger_type: triggerType,
+      auto_convert_critical: true
+    })
+  });
+  if (!res.ok) {
+    throw new Error('Failed to run autonomous risk detection scan');
+  }
+  return await res.json();
+}
+
+export async function convertRiskToDisruption(riskId: string): Promise<any> {
+  const res = await fetch(`/api/risks/${riskId}/convert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to convert risk ${riskId} to disruption`);
+  }
+  return await res.json();
+}
+

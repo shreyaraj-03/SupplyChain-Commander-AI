@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   fetchDisruptions,
+  fetchRisks,
+  runRiskDetectionScan,
+  convertRiskToDisruption,
   triggerInvestigation,
   runSimulation
 } from './services/api.ts';
 import {
   Disruption,
   Investigation,
-  StrategyScoreWeights
+  StrategyScoreWeights,
+  RiskSignal
 } from './types/supplyChain.ts';
 import { Navbar, ActivePerspective } from './components/Navbar.tsx';
 import { DisruptionSelector } from './components/DisruptionSelector.tsx';
+import { AiDetectedRisksView } from './components/AiDetectedRisksView.tsx';
 import { AgentProgressView } from './components/AgentProgressView.tsx';
 import { ImpactMetricsView } from './components/ImpactMetricsView.tsx';
 import { InventorySupplierView } from './components/InventorySupplierView.tsx';
@@ -29,9 +34,11 @@ import {
 
 export default function App() {
   const [disruptions, setDisruptions] = useState<Disruption[]>([]);
+  const [risks, setRisks] = useState<RiskSignal[]>([]);
   const [selectedDisruption, setSelectedDisruption] = useState<Disruption | null>(null);
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePerspective, setActivePerspective] = useState<ActivePerspective>('operations');
@@ -44,26 +51,92 @@ export default function App() {
     customer_impact_weight: 0.20
   });
 
-  // Load initial disruptions
-  const loadDisruptions = useCallback(async () => {
+  // Load disruptions and AI detected risks
+  const loadData = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchDisruptions();
-      setDisruptions(data);
-      if (data.length > 0 && !selectedDisruption) {
-        const initial = data[0];
-        setSelectedDisruption(initial);
-        runAgentInvestigation(initial.disruption_id);
-      }
+      const [disrData, riskData] = await Promise.all([
+        fetchDisruptions(),
+        fetchRisks().catch(() => [])
+      ]);
+      setDisruptions(disrData);
+      setRisks(riskData);
+
+      setSelectedDisruption((prev) => {
+        if (!prev && disrData.length > 0) {
+          const initial = disrData[0];
+          runAgentInvestigation(initial.disruption_id);
+          return initial;
+        }
+        return prev;
+      });
     } catch (err: any) {
-      console.error('Failed to load disruptions:', err);
-      setError(err.message || 'Failed to load disruption data');
+      console.error('Failed to load initial data:', err);
+      setError(err.message || 'Failed to load disruption and risk data');
     }
   }, []);
 
   useEffect(() => {
-    loadDisruptions();
-  }, [loadDisruptions]);
+    loadData();
+  }, [loadData]);
+
+  // Run autonomous risk scan
+  const runDetectionScan = async () => {
+    setIsScanning(true);
+    setError(null);
+    try {
+      const res = await runRiskDetectionScan('MANUAL');
+      if (res && res.signals) {
+        setRisks(res.signals);
+      } else {
+        const updatedRisks = await fetchRisks();
+        setRisks(updatedRisks);
+      }
+      const updatedDisruptions = await fetchDisruptions();
+      setDisruptions(updatedDisruptions);
+    } catch (err: any) {
+      console.error('Detection scan error:', err);
+      setError(err.message || 'Failed to complete autonomous risk scan');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  // Convert risk to formal disruption
+  const handleConvertRisk = async (riskId: string) => {
+    try {
+      await convertRiskToDisruption(riskId);
+      await loadData();
+    } catch (err: any) {
+      console.error('Convert risk error:', err);
+      setError(err.message || 'Failed to convert risk to disruption');
+    }
+  };
+
+  // Investigate an AI detected risk
+  const handleInvestigateRisk = async (risk: RiskSignal) => {
+    try {
+      let targetDisruptionId = risk.associated_disruption_id;
+      if (!targetDisruptionId) {
+        const conv = await convertRiskToDisruption(risk.risk_id);
+        if (conv && conv.disruption) {
+          targetDisruptionId = conv.disruption.disruption_id;
+        }
+      }
+
+      const allDisr = await fetchDisruptions();
+      setDisruptions(allDisr);
+      const targetDisruption = allDisr.find((d) => d.disruption_id === targetDisruptionId) || allDisr[0];
+      if (targetDisruption) {
+        setSelectedDisruption(targetDisruption);
+        setActivePerspective('operations');
+        runAgentInvestigation(targetDisruption.disruption_id);
+      }
+    } catch (err: any) {
+      console.error('Investigate risk error:', err);
+      setError(err.message || 'Failed to launch investigation for risk');
+    }
+  };
 
   // Run autonomous multi-agent investigation
   const runAgentInvestigation = async (disruptionId: string, weights?: StrategyScoreWeights) => {
@@ -111,10 +184,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       <Navbar
-        onRefresh={loadDisruptions}
-        isInvestigating={isInvestigating}
+        onRefresh={loadData}
+        isInvestigating={isInvestigating || isScanning}
         activePerspective={activePerspective}
         onPerspectiveChange={setActivePerspective}
+        riskCount={risks.filter((r) => r.severity === 'CRITICAL' || r.severity === 'HIGH').length}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -126,7 +200,7 @@ export default function App() {
               <span>{error}</span>
             </div>
             <button
-              onClick={() => selectedDisruption && runAgentInvestigation(selectedDisruption.disruption_id)}
+              onClick={() => loadData()}
               className="px-3 py-1 bg-rose-600 text-white rounded font-medium hover:bg-rose-700 transition"
             >
               Retry
@@ -134,18 +208,18 @@ export default function App() {
           </div>
         )}
 
-        {/* Global Incident Switchboard */}
-        <DisruptionSelector
-          disruptions={disruptions}
-          selectedDisruptionId={selectedDisruption?.disruption_id || null}
-          onSelect={handleSelectDisruption}
-          onInvestigate={(id) => runAgentInvestigation(id)}
-          isInvestigating={isInvestigating}
-        />
-
-        {/* TAB 1: OPERATIONS UI (Full-width Business User View) */}
+        {/* TAB 1: OPERATIONS UI (Full-width Business User View with Incident Switchboard + Mitigations) */}
         {activePerspective === 'operations' && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Global Incident Switchboard */}
+            <DisruptionSelector
+              disruptions={disruptions}
+              selectedDisruptionId={selectedDisruption?.disruption_id || null}
+              onSelect={handleSelectDisruption}
+              onInvestigate={(id) => runAgentInvestigation(id)}
+              isInvestigating={isInvestigating}
+            />
+
             {/* Impact & Blast Radius Analytics */}
             {investigation?.impact && (
               <ImpactMetricsView
@@ -183,7 +257,21 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: AGENT LAB (Full-width Multi-Agent DAG & BigQuery MCP Inspector) */}
+        {/* TAB 2: AI RISK RADAR (Dedicated Early-Warning & Anomaly Telemetry) */}
+        {activePerspective === 'risks' && (
+          <div className="space-y-6 animate-fadeIn">
+            <AiDetectedRisksView
+              risks={risks}
+              onScan={runDetectionScan}
+              isScanning={isScanning}
+              onInvestigateRisk={handleInvestigateRisk}
+              onConvertRisk={handleConvertRisk}
+              isInvestigating={isInvestigating}
+            />
+          </div>
+        )}
+
+        {/* TAB 3: AGENT LAB (Full-width Multi-Agent DAG & BigQuery MCP Inspector) */}
         {activePerspective === 'agent' && (
           <div className="space-y-6 animate-fadeIn">
             {investigation?.agent_logs && selectedDisruption && (
