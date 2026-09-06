@@ -16,7 +16,7 @@ import {
 import { Navbar, ActivePerspective } from './components/Navbar.tsx';
 import { DisruptionSelector } from './components/DisruptionSelector.tsx';
 import { AiDetectedRisksView } from './components/AiDetectedRisksView.tsx';
-import { AgentProgressView } from './components/AgentProgressView.tsx';
+import { RiskAnalysisModal } from './components/RiskAnalysisModal.tsx';
 import { ImpactMetricsView } from './components/ImpactMetricsView.tsx';
 import { InventorySupplierView } from './components/InventorySupplierView.tsx';
 import { StrategyMatrix } from './components/StrategyMatrix.tsx';
@@ -24,12 +24,7 @@ import { RecommendationView } from './components/RecommendationView.tsx';
 import { ExecutionModal } from './components/ExecutionModal.tsx';
 import {
   AlertCircle,
-  ShieldCheck,
-  Briefcase,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  Database
+  ShieldCheck
 } from 'lucide-react';
 
 export default function App() {
@@ -43,6 +38,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [activePerspective, setActivePerspective] = useState<ActivePerspective>('operations');
   const [isExecutionModalOpen, setIsExecutionModalOpen] = useState(false);
+
+  // AI Risk Analysis Modal State
+  const [selectedRiskForAnalysis, setSelectedRiskForAnalysis] = useState<RiskSignal | null>(null);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState<boolean>(false);
+  const [isConvertingId, setIsConvertingId] = useState<string | null>(null);
 
   const [currentWeights, setCurrentWeights] = useState<StrategyScoreWeights>({
     recovery_speed_weight: 0.30,
@@ -116,39 +116,38 @@ export default function App() {
     }
   };
 
-  // Convert risk to formal disruption
+  // Convert risk signal to active disruption event
   const handleConvertRisk = async (riskId: string) => {
+    setIsConvertingId(riskId);
     try {
-      await convertRiskToDisruption(riskId);
+      const conv = await convertRiskToDisruption(riskId);
       await loadData();
+      if (conv && conv.disruption) {
+        const updatedDisr = await fetchDisruptions();
+        setDisruptions(updatedDisr);
+      }
     } catch (err: any) {
       console.error('Convert risk error:', err);
       setError(err.message || 'Failed to convert risk to disruption');
+    } finally {
+      setIsConvertingId(null);
     }
   };
 
-  // Investigate an AI detected risk
-  const handleInvestigateRisk = async (risk: RiskSignal) => {
-    try {
-      let targetDisruptionId = risk.associated_disruption_id;
-      if (!targetDisruptionId) {
-        const conv = await convertRiskToDisruption(risk.risk_id);
-        if (conv && conv.disruption) {
-          targetDisruptionId = conv.disruption.disruption_id;
-        }
-      }
+  // Open detailed AI Risk Analysis Modal
+  const handleOpenAnalysisModal = (risk: RiskSignal) => {
+    setSelectedRiskForAnalysis(risk);
+    setIsAnalysisModalOpen(true);
+  };
 
-      const allDisr = await fetchDisruptions();
-      setDisruptions(allDisr);
-      const targetDisruption = allDisr.find((d) => d.disruption_id === targetDisruptionId) || allDisr[0];
-      if (targetDisruption) {
-        setSelectedDisruption(targetDisruption);
-        setActivePerspective('operations');
-        runAgentInvestigation(targetDisruption.disruption_id);
+  // Navigate to Operations Center perspective and select disruption
+  const handleNavigateToOperations = (disruptionId?: string) => {
+    setActivePerspective('operations');
+    if (disruptionId) {
+      const target = disruptions.find((d) => d.disruption_id === disruptionId);
+      if (target) {
+        handleSelectDisruption(target);
       }
-    } catch (err: any) {
-      console.error('Investigate risk error:', err);
-      setError(err.message || 'Failed to launch investigation for risk');
     }
   };
 
@@ -222,7 +221,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1: OPERATIONS UI (Full-width Business User View with Incident Switchboard + Mitigations) */}
+        {/* TAB 1: OPERATIONS CENTER */}
         {activePerspective === 'operations' && (
           <div className="space-y-6 animate-fadeIn">
             {/* Global Incident Switchboard */}
@@ -271,42 +270,30 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: AI RISK RADAR (Dedicated Early-Warning & Anomaly Telemetry) */}
+        {/* TAB 2: AI RISK RADAR */}
         {activePerspective === 'risks' && (
           <div className="space-y-6 animate-fadeIn">
             <AiDetectedRisksView
               risks={risks}
               onScan={runDetectionScan}
               isScanning={isScanning}
-              onInvestigateRisk={handleInvestigateRisk}
+              onOpenAnalysisModal={handleOpenAnalysisModal}
               onConvertRisk={handleConvertRisk}
-              isInvestigating={isInvestigating}
+              onNavigateToOperations={handleNavigateToOperations}
+              isConvertingId={isConvertingId}
             />
           </div>
         )}
-
-        {/* TAB 3: AGENT LAB (Full-width Multi-Agent DAG & BigQuery MCP Inspector) */}
-        {activePerspective === 'agent' && (
-          <div className="space-y-6 animate-fadeIn">
-            {investigation?.agent_logs && selectedDisruption && (
-              <AgentProgressView
-                logs={investigation.agent_logs}
-                isInvestigating={isInvestigating}
-                disruptionId={selectedDisruption.disruption_id}
-              />
-            )}
-
-            {/* Executive Recommendation Summary inside Agent Lab */}
-            {investigation?.explanation && topStrategy && (
-              <RecommendationView
-                explanation={investigation.explanation}
-                recommendedStrategy={topStrategy}
-                onExecuteMitigation={() => setIsExecutionModalOpen(true)}
-              />
-            )}
-          </div>
-        )}
       </main>
+
+      {/* Detailed AI Risk Analysis Modal */}
+      <RiskAnalysisModal
+        isOpen={isAnalysisModalOpen}
+        onClose={() => setIsAnalysisModalOpen(false)}
+        risk={selectedRiskForAnalysis}
+        onConvertRisk={handleConvertRisk}
+        onNavigateToOperations={handleNavigateToOperations}
+      />
 
       {/* Execution Authorization Modal */}
       {topStrategy && selectedDisruption && (
@@ -323,10 +310,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>SupplyChain Commander AI — Autonomous Multi-Agent Decision Intelligence</span>
+            <span>SupplyChain Commander AI — Enterprise Autonomous Risk Radar & Operations Intelligence</span>
           </div>
-          <div className="text-slate-500 font-mono text-[11px]">
-            Google ADK Multi-Agent Core • BigQuery Analytics Dataset • Deterministic Optimization
+          <div className="text-slate-400 text-[11px] font-medium">
+            Real-Time Telemetry • Deterministic Strategy Ranking • Automated Executive Mitigation
           </div>
         </div>
       </footer>

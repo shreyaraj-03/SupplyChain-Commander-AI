@@ -1,15 +1,12 @@
 import React from 'react';
 import {
   ShieldAlert,
-  Cpu,
-  Database,
   Activity,
   RefreshCw,
-  Briefcase,
-  Layers
+  Briefcase
 } from 'lucide-react';
 
-export type ActivePerspective = 'operations' | 'risks' | 'agent';
+export type ActivePerspective = 'operations' | 'risks';
 
 interface NavbarProps {
   onRefresh?: () => void;
@@ -37,20 +34,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg tracking-tight text-white">SupplyChain Commander AI</span>
-              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hidden sm:inline">
-                Google ADK + BigQuery
-              </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">Autonomous Multi-Agent Disruption Investigation & Recovery</p>
+            <p className="text-xs text-slate-400 hidden sm:block">Enterprise Supply Chain Risk Radar & Operations Center</p>
           </div>
         </div>
 
-        {/* 3-Tab Perspective Switcher (Operations UI vs AI Risk Radar vs Agent Lab) */}
+        {/* 2-Tab Perspective Switcher (Operations Center vs AI Risk Radar) */}
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
           <button
             id="view-operations-tab"
             onClick={() => onPerspectiveChange('operations')}
-            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
               activePerspective === 'operations'
                 ? 'bg-emerald-600 text-white shadow-md font-bold'
                 : 'text-slate-400 hover:text-white'
@@ -58,18 +52,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Operations Center (Incident Switchboard & Mitigations)"
           >
             <Briefcase className="w-3.5 h-3.5" />
-            <span>Operations UI</span>
+            <span>Operations Center</span>
           </button>
 
           <button
             id="view-risks-tab"
             onClick={() => onPerspectiveChange('risks')}
-            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
+            className={`px-4 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
               activePerspective === 'risks'
                 ? 'bg-amber-600 text-white shadow-md font-bold'
                 : 'text-slate-400 hover:text-white'
             }`}
-            title="AI Detected Risks (Continuous BigQuery Early-Warning Radar)"
+            title="AI Risk Radar (Early-Warning Telemetry)"
           >
             <Activity className="w-3.5 h-3.5" />
             <span>AI Risk Radar</span>
@@ -79,44 +73,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             )}
           </button>
-
-          <button
-            id="view-agent-tab"
-            onClick={() => onPerspectiveChange('agent')}
-            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 transition ${
-              activePerspective === 'agent'
-                ? 'bg-indigo-600 text-white shadow-md font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
-            title="Multi-Agent Lab (Architecture DAG & BigQuery Inspector)"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Agent Lab</span>
-          </button>
         </div>
 
-        {/* System Badges & Refresh */}
-        <div className="hidden lg:flex items-center gap-3 text-xs text-slate-300">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700">
-            <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Python: <strong className="text-white">v3.11</strong></span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700">
-            <Database className="w-3.5 h-3.5 text-blue-400" />
-            <span>MCP: <strong className="text-white">BigQuery</strong></span>
-          </div>
-
+        {/* Action Controls */}
+        <div className="flex items-center gap-3 text-xs text-slate-300">
           {onRefresh && (
             <button
               id="refresh-feed-btn"
               onClick={onRefresh}
               disabled={isInvestigating}
-              className="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 disabled:opacity-50 flex items-center gap-2 font-medium"
               title="Refresh Disruptions"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isInvestigating ? 'animate-spin' : ''}`} />
-              <span className="hidden md:inline text-xs">Refresh</span>
+              <span className="hidden sm:inline">Refresh Feed</span>
             </button>
           )}
         </div>

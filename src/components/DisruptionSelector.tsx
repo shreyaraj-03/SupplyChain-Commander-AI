@@ -26,7 +26,7 @@ export const DisruptionSelector: React.FC<DisruptionSelectorProps> = ({
             Active Supply Chain Disruptions
           </h2>
           <p className="text-sm text-slate-500">
-            Select a live disruption or simulate a scenario to trigger the autonomous multi-agent investigation workflow.
+            Select an active disruption incident to evaluate real-time financial impact and AI mitigation strategies.
           </p>
         </div>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
@@ -92,8 +92,10 @@ export const DisruptionSelector: React.FC<DisruptionSelectorProps> = ({
 
               {/* Action Button */}
               <div className="pt-3 border-t border-slate-700/50 mt-auto flex items-center justify-between">
-                <span className={`text-[11px] font-mono ${isSelected ? 'text-indigo-400' : 'text-slate-400'}`}>
-                  {d.disruption_id}
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                  isSelected ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-700/50' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  INCIDENT #{d.disruption_id.replace('DISR_AUTO_', '').replace('DISR_', '')}
                 </span>
 
                 <button
