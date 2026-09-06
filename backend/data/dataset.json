@@ -635,6 +635,49 @@
           "days_of_supply": 0.0
         }
       }
+    },
+    {
+      "disruption_id": "DISR_AUTO_DEMAND_PROD_001_WH_BLR",
+      "disruption_type": "DEMAND_SPIKE",
+      "entity_type": "WAREHOUSE",
+      "entity_id": "WH_BLR",
+      "entity_name": "WH_BLR",
+      "severity": "CRITICAL",
+      "reported_at": "2026-09-06T19:18:06.027442+00:00",
+      "expected_duration_days": 7,
+      "description": "[AI DATA-DETECTED RISK] Daily demand for Laptop Pro X15 (Core i9 / 32GB) surged to 36.0 units/day (+68.0% over baseline of 21.4 units/day).",
+      "status": "ACTIVE",
+      "scenario_tag": "AI Detected: Demand Spike (PROD_001)",
+      "affected_product_id": "PROD_001",
+      "destination_warehouse_id": "WH_BLR",
+      "source": "DATA_DETECTED",
+      "risk_id": "RSK_DEMAND_PROD_001_WH_BLR",
+      "detection_method": "DEMAND_SPIKE",
+      "detection_confidence": 0.98,
+      "detected_at": "2026-09-06T19:11:34.788229+00:00",
+      "validated_at": "2026-09-06T19:18:06.027442+00:00",
+      "detection_evidence": {
+        "metric_name": "daily_demand_increase_pct",
+        "observed_value": 68.0,
+        "baseline_value": 21.4,
+        "threshold_value": 30.0,
+        "unit": "%",
+        "summary": "Daily demand for Laptop Pro X15 (Core i9 / 32GB) surged to 36.0 units/day (+68.0% over baseline of 21.4 units/day).",
+        "drivers": [
+          "Current daily demand of 36.0 units vs baseline of 21.4 units.",
+          "5 customer orders totaling 180 units in current active window.",
+          "Total order value exposure of \u20b915,300,000 across Bangalore Central Fulfillment Hub.",
+          "Multi-Signal Correlation: Confirmed by 3 additional independent risk signals."
+        ],
+        "raw_details": {
+          "current_daily_demand": 36.0,
+          "baseline_daily_demand": 21.428571428571427,
+          "pct_increase": 0.6800000000000002,
+          "total_demanded": 180,
+          "total_order_value": 15300000.0,
+          "order_count": 5
+        }
+      }
     }
   ],
   "supplier_performance": [

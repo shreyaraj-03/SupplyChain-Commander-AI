@@ -22,6 +22,7 @@ import { InventorySupplierView } from './components/InventorySupplierView.tsx';
 import { StrategyMatrix } from './components/StrategyMatrix.tsx';
 import { RecommendationView } from './components/RecommendationView.tsx';
 import { ExecutionModal } from './components/ExecutionModal.tsx';
+import { ConvertRiskConfirmationModal } from './components/ConvertRiskConfirmationModal.tsx';
 import {
   AlertCircle,
   ShieldCheck
@@ -39,10 +40,12 @@ export default function App() {
   const [activePerspective, setActivePerspective] = useState<ActivePerspective>('operations');
   const [isExecutionModalOpen, setIsExecutionModalOpen] = useState(false);
 
-  // AI Risk Analysis Modal State
+  // AI Risk Analysis & Conversion Confirmation Modal State
   const [selectedRiskForAnalysis, setSelectedRiskForAnalysis] = useState<RiskSignal | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState<boolean>(false);
   const [isConvertingId, setIsConvertingId] = useState<string | null>(null);
+  const [riskToConvert, setRiskToConvert] = useState<RiskSignal | null>(null);
+  const [isConvertConfirmationOpen, setIsConvertConfirmationOpen] = useState<boolean>(false);
 
   const [currentWeights, setCurrentWeights] = useState<StrategyScoreWeights>({
     recovery_speed_weight: 0.30,
@@ -151,6 +154,28 @@ export default function App() {
       setError(err.message || 'Failed to convert risk to disruption');
     } finally {
       setIsConvertingId(null);
+    }
+  };
+
+  // Request confirmation to convert risk signal to active disruption event
+  const handleRequestConvertRisk = (riskId: string) => {
+    const targetRisk = risks.find((r) => r.risk_id === riskId) || selectedRiskForAnalysis;
+    if (targetRisk) {
+      setRiskToConvert(targetRisk);
+      setIsConvertConfirmationOpen(true);
+    } else {
+      handleConvertRisk(riskId);
+    }
+  };
+
+  const handleConfirmConvertRisk = async () => {
+    if (!riskToConvert) return;
+    const targetId = riskToConvert.risk_id;
+    try {
+      await handleConvertRisk(targetId);
+    } finally {
+      setIsConvertConfirmationOpen(false);
+      setRiskToConvert(null);
     }
   };
 
@@ -304,7 +329,7 @@ export default function App() {
               onScan={runDetectionScan}
               isScanning={isScanning}
               onOpenAnalysisModal={handleOpenAnalysisModal}
-              onConvertRisk={handleConvertRisk}
+              onConvertRisk={handleRequestConvertRisk}
               onNavigateToOperations={handleNavigateToOperations}
               isConvertingId={isConvertingId}
             />
@@ -317,8 +342,20 @@ export default function App() {
         isOpen={isAnalysisModalOpen}
         onClose={() => setIsAnalysisModalOpen(false)}
         risk={selectedRiskForAnalysis}
-        onConvertRisk={handleConvertRisk}
+        onConvertRisk={handleRequestConvertRisk}
         onNavigateToOperations={handleNavigateToOperations}
+      />
+
+      {/* Convert Risk Confirmation Pop-up Modal */}
+      <ConvertRiskConfirmationModal
+        isOpen={isConvertConfirmationOpen}
+        onClose={() => {
+          setIsConvertConfirmationOpen(false);
+          setRiskToConvert(null);
+        }}
+        onConfirm={handleConfirmConvertRisk}
+        risk={riskToConvert}
+        isConverting={isConvertingId !== null}
       />
 
       {/* Execution Authorization Modal */}
