@@ -49,7 +49,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -103,7 +103,7 @@
       "RSK_GAP_PROD_002_WH_BLR"
     ],
     "validation_score": 85.0,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -154,7 +154,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 78.4,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -209,9 +209,9 @@
       "RSK_SHIPMENT_SHP_7003"
     ],
     "validation_score": 95.5,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
-    "validated_at": "2026-09-02T18:12:59.217271+00:00",
-    "converted_at": "2026-09-02T18:12:59.765640+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
+    "validated_at": "2026-09-05T15:56:35.354693+00:00",
+    "converted_at": "2026-09-05T15:56:35.386155+00:00",
     "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_004_WH_DEL",
     "dismissal_reason": null
   },
@@ -264,7 +264,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -325,7 +325,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -384,7 +384,7 @@
       "RSK_INVENTORY_PROD_002_WH_BLR"
     ],
     "validation_score": 89.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -444,9 +444,9 @@
       "RSK_SHIPMENT_SHP_7003"
     ],
     "validation_score": 98.4,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
-    "validated_at": "2026-09-02T18:12:59.217271+00:00",
-    "converted_at": "2026-09-02T18:12:59.773669+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
+    "validated_at": "2026-09-05T15:56:35.354693+00:00",
+    "converted_at": "2026-09-05T15:56:35.388159+00:00",
     "associated_disruption_id": "DISR_AUTO_GAP_PROD_004_WH_DEL",
     "dismissal_reason": null
   },
@@ -502,7 +502,7 @@
       "RSK_GAP_PROD_001_WH_BLR"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -559,9 +559,9 @@
       "RSK_GAP_PROD_004_WH_DEL"
     ],
     "validation_score": 95.5,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
-    "validated_at": "2026-09-02T18:12:59.217271+00:00",
-    "converted_at": "2026-09-02T18:12:59.786031+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
+    "validated_at": "2026-09-05T15:56:35.354693+00:00",
+    "converted_at": "2026-09-05T15:56:35.391299+00:00",
     "associated_disruption_id": "DISR_AUTO_SHIPMENT_SHP_7003",
     "dismissal_reason": null
   },
@@ -610,7 +610,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 59.2,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -662,7 +662,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 50.4,
-    "detected_at": "2026-09-02T18:12:59.215936+00:00",
+    "detected_at": "2026-09-05T15:56:35.354693+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,

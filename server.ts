@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { disruptions } from './server/data/syntheticData.ts';
 
@@ -113,12 +113,13 @@ function getMergedDisruptions(): any[] {
     mapByEntity.set(key, d);
   }
 
-  // Merge dynamic disruptions from file, updating with the latest record
-  const dynamicFile = path.join(process.cwd(), 'backend', 'data', 'dynamic_disruptions.json');
+  // Merge dynamic disruptions from database via RiskRepository
   try {
-    if (fs.existsSync(dynamicFile)) {
-      const data = JSON.parse(fs.readFileSync(dynamicFile, 'utf-8'));
-      const dynamicList = Object.values(data) as any[];
+    const pythonBin = getPythonBin();
+    const cmd = `${pythonBin} -c "from backend.app.risk_detection.risk_repository import RiskRepository; import json; print(json.dumps(RiskRepository.list_dynamic_disruptions()))"`;
+    const stdout = execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
+    if (stdout && stdout.trim()) {
+      const dynamicList = JSON.parse(stdout.trim()) as any[];
       for (const d of dynamicList) {
         const entityKey = d.entity_id
           ? `${d.entity_id}__${d.disruption_type}`
@@ -136,7 +137,7 @@ function getMergedDisruptions(): any[] {
       }
     }
   } catch (err) {
-    console.error('Error reading dynamic disruptions:', err);
+    console.error('Error fetching dynamic disruptions from DB:', err);
   }
 
   return Array.from(mapByEntity.values());

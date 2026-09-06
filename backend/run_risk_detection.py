@@ -51,6 +51,10 @@ def main():
                 supplier_id=input_data.get("supplier_id")
             )
             print(json.dumps({"success": True, "count": len(risks), "risks": [r.to_dict() for r in risks]}))
+
+        elif action == "list_disruptions":
+            disruptions = RiskRepository.list_dynamic_disruptions()
+            print(json.dumps({"success": True, "count": len(disruptions), "disruptions": disruptions}))
             
         elif action == "convert_risk":
             risk_id = input_data.get("risk_id")
