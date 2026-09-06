@@ -10,6 +10,7 @@ export type ActivePerspective = 'operations' | 'risks';
 
 interface NavbarProps {
   onRefresh?: () => void;
+  isRefreshing?: boolean;
   isInvestigating?: boolean;
   activePerspective: ActivePerspective;
   onPerspectiveChange: (perspective: ActivePerspective) => void;
@@ -18,6 +19,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   onRefresh,
+  isRefreshing,
   isInvestigating,
   activePerspective,
   onPerspectiveChange,
@@ -81,12 +83,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="refresh-feed-btn"
               onClick={onRefresh}
-              disabled={isInvestigating}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 disabled:opacity-50 flex items-center gap-2 font-medium"
-              title="Refresh Disruptions"
+              disabled={isInvestigating || isRefreshing}
+              className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition border border-slate-700 disabled:opacity-50 flex items-center gap-2 font-medium shadow-sm"
+              title="Refresh Operations & AI Risk Telemetry Data"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isInvestigating ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh Feed</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing || isInvestigating ? 'animate-spin text-indigo-400' : 'text-slate-300'}`} />
+              <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh Feed'}</span>
             </button>
           )}
         </div>

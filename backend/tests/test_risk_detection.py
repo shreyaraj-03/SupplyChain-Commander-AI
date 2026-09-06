@@ -27,11 +27,20 @@ from backend.app.risk_detection.risk_repository import RiskRepository
 from backend.app.tools.mcp_tools import _load_dataset
 
 
+import os
+from backend.app.db.db_session import init_db
+
 class TestRiskDetectors(unittest.TestCase):
 
     def setUp(self):
+        os.environ["TEST_DB_PATH"] = ":memory:"
+        init_db()
         RiskRepository.clear()
         self.dataset = _load_dataset()
+
+    def tearDown(self):
+        if "TEST_DB_PATH" in os.environ:
+            del os.environ["TEST_DB_PATH"]
 
     def test_demand_risk_detector_nominal_vs_spike(self):
         """Test demand spike detection with baseline vs elevated demand."""
@@ -203,8 +212,13 @@ class TestRiskDetectors(unittest.TestCase):
 
     def test_end_to_end_risk_engine_scan(self):
         """Test full Risk Detection Engine execution scan on the dataset."""
+        test_dataset = dict(self.dataset)
+        test_dataset["disruptions"] = [
+            d for d in self.dataset.get("disruptions", [])
+            if not d.get("disruption_id", "").startswith("DISR_AUTO_")
+        ]
         result = RiskDetectionEngine.run_detection_scan(
-            dataset=self.dataset,
+            dataset=test_dataset,
             trigger_type="MANUAL",
             auto_convert_critical=True
         )

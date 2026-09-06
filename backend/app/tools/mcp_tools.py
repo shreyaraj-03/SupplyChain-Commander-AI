@@ -104,11 +104,27 @@ def _load_dataset(force_refresh: bool = False) -> Dict[str, Any]:
         with open(dataset_path, "r", encoding="utf-8") as f:
             _dataset_cache = json.load(f)
             _last_fetch_time = now
-            return _dataset_cache
+            return _merge_dynamic_disruptions(_dataset_cache)
     from backend.data.generate_synthetic_data import generate_datasets
     _dataset_cache = generate_datasets()
     _last_fetch_time = now
-    return _dataset_cache
+    return _merge_dynamic_disruptions(_dataset_cache)
+
+def _merge_dynamic_disruptions(ds: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        from backend.app.risk_detection.risk_repository import RiskRepository
+        dyn_disrs = RiskRepository.list_dynamic_disruptions()
+        if dyn_disrs:
+            existing = ds.get("disruptions", [])
+            exist_ids = {d.get("disruption_id") for d in existing if d.get("disruption_id")}
+            for dyn in dyn_disrs:
+                if dyn.get("disruption_id") not in exist_ids:
+                    existing.append(dyn)
+                    exist_ids.add(dyn.get("disruption_id"))
+            ds["disruptions"] = existing
+    except Exception:
+        pass
+    return ds
 
 class MCPTools:
     """

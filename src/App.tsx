@@ -51,8 +51,11 @@ export default function App() {
     customer_impact_weight: 0.20
   });
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Load disruptions and AI detected risks
   const loadData = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       setError(null);
       const [disrData, riskData] = await Promise.all([
@@ -68,11 +71,17 @@ export default function App() {
           runAgentInvestigation(initial.disruption_id);
           return initial;
         }
+        if (prev) {
+          const updated = disrData.find((d) => d.disruption_id === prev.disruption_id);
+          if (updated) return updated;
+        }
         return prev;
       });
     } catch (err: any) {
       console.error('Failed to load initial data:', err);
       setError(err.message || 'Failed to load disruption and risk data');
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -214,6 +223,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       <Navbar
         onRefresh={loadData}
+        isRefreshing={isRefreshing}
         isInvestigating={isInvestigating || isScanning}
         activePerspective={activePerspective}
         onPerspectiveChange={setActivePerspective}

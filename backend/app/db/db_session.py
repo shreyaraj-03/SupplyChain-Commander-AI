@@ -11,12 +11,17 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
 DB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
-DB_PATH = os.path.join(DB_DIR, "supplychain_commander.db")
+DB_PATH = os.getenv("TEST_DB_PATH") or os.path.join(DB_DIR, "supplychain_commander.db")
 
 def get_db_connection() -> sqlite3.Connection:
-    os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    if not os.getenv("TEST_DB_PATH"):
+        os.makedirs(DB_DIR, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+    except Exception:
+        pass
     return conn
 
 def init_db():

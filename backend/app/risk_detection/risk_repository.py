@@ -26,6 +26,97 @@ class RiskRepository:
     _active_disruptions_cache: Dict[str, Dict[str, Any]] = {}
 
     @classmethod
+    def _persist_disruption_to_disk(cls, disruption: Dict[str, Any]):
+        try:
+            data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+            os.makedirs(data_dir, exist_ok=True)
+            dyn_path = os.path.join(data_dir, "dynamic_disruptions.json")
+            data = {}
+            if os.path.exists(dyn_path):
+                try:
+                    with open(dyn_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {}
+            data[disruption["disruption_id"]] = disruption
+            with open(dyn_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+
+            ds_path = os.path.join(data_dir, "dataset.json")
+            if os.path.exists(ds_path):
+                try:
+                    with open(ds_path, "r", encoding="utf-8") as f:
+                        ds_data = json.load(f)
+                    disrs = ds_data.get("disruptions", [])
+                    idx = next((i for i, d in enumerate(disrs) if d.get("disruption_id") == disruption["disruption_id"]), None)
+                    if idx is not None:
+                        disrs[idx] = disruption
+                    else:
+                        disrs.append(disruption)
+                    ds_data["disruptions"] = disrs
+                    with open(ds_path, "w", encoding="utf-8") as f:
+                        json.dump(ds_data, f, indent=2)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Disk disruption persistence note: {e}")
+
+    @classmethod
+    def _persist_risk_to_disk(cls, risk_dict: Dict[str, Any]):
+        try:
+            data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+            os.makedirs(data_dir, exist_ok=True)
+            risk_path = os.path.join(data_dir, "detected_risks.json")
+            data = {}
+            if os.path.exists(risk_path):
+                try:
+                    with open(risk_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {}
+            data[risk_dict["risk_id"]] = risk_dict
+            with open(risk_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Disk risk persistence note: {e}")
+
+    @classmethod
+    def sync_converted_risk_statuses(cls):
+        """Cross-checks dynamic_disruptions with detected_risks to ensure risk status consistency."""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+            SELECT risk_id, disruption_id, reported_at 
+            FROM dynamic_disruptions 
+            WHERE risk_id IS NOT NULL AND risk_id != ''
+            """)
+            rows = cursor.fetchall()
+            for r in rows:
+                r_id = r["risk_id"]
+                d_id = r["disruption_id"]
+                rep_at = r["reported_at"]
+                cursor.execute("""
+                UPDATE detected_risks 
+                SET status = 'CONVERTED_TO_DISRUPTION',
+                    converted_at = COALESCE(converted_at, ?),
+                    converted_disruption_id = ?
+                WHERE risk_id = ? AND status != 'CONVERTED_TO_DISRUPTION'
+                """, (rep_at, d_id, r_id))
+            conn.commit()
+
+            # Also fetch all converted risks and sync to disk JSON
+            cursor.execute("SELECT * FROM detected_risks WHERE status = 'CONVERTED_TO_DISRUPTION'")
+            c_rows = cursor.fetchall()
+            conn.close()
+
+            for crow in c_rows:
+                sig = cls._row_to_risk_signal(dict(crow))
+                cls._persist_risk_to_disk(sig.to_dict())
+        except Exception as e:
+            print(f"Risk status sync note: {e}")
+
+    @classmethod
     def _migrate_legacy_json_to_db(cls):
         """One-time migration of existing .json contents into the SQLite database."""
         conn = get_db_connection()
@@ -120,6 +211,7 @@ class RiskRepository:
 
         conn.commit()
         conn.close()
+        cls.sync_converted_risk_statuses()
 
     @classmethod
     def save_disruption(cls, disruption: Dict[str, Any]) -> Dict[str, Any]:
@@ -159,6 +251,7 @@ class RiskRepository:
         ))
         conn.commit()
         conn.close()
+        cls._persist_disruption_to_disk(disruption)
         return disruption
 
     @classmethod
@@ -205,10 +298,23 @@ class RiskRepository:
 
     @classmethod
     def save_risk(cls, risk: RiskSignal) -> RiskSignal:
-        cls._risks_store[risk.risk_id] = risk
-        
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Check existing row in SQLite DB to prevent status regression (e.g., CONVERTED_TO_DISRUPTION -> MONITORING)
+        cursor.execute("SELECT status, converted_at, converted_disruption_id FROM detected_risks WHERE risk_id = ?", (risk.risk_id,))
+        existing_row = cursor.fetchone()
+        if existing_row:
+            ex_dict = dict(existing_row)
+            if ex_dict.get("status") == "CONVERTED_TO_DISRUPTION":
+                risk.status = RiskStatus.CONVERTED_TO_DISRUPTION
+                if not risk.converted_at and ex_dict.get("converted_at"):
+                    risk.converted_at = ex_dict.get("converted_at")
+                if not getattr(risk, "associated_disruption_id", None) and ex_dict.get("converted_disruption_id"):
+                    risk.associated_disruption_id = ex_dict.get("converted_disruption_id")
+
+        cls._risks_store[risk.risk_id] = risk
+        
         ev_dict = risk.evidence.to_dict() if risk.evidence else {}
         cursor.execute("""
         INSERT OR REPLACE INTO detected_risks (
@@ -237,18 +343,8 @@ class RiskRepository:
         ))
         conn.commit()
         conn.close()
+        cls._persist_risk_to_disk(risk.to_dict())
         return risk
-
-    @classmethod
-    def get_risk(cls, risk_id: str) -> Optional[RiskSignal]:
-        if risk_id in cls._risks_store:
-            return cls._risks_store[risk_id]
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM detected_risks WHERE risk_id = ?", (risk_id,))
-        row = cursor.fetchone()
-        conn.close()
 
     @classmethod
     def _row_to_risk_signal(cls, rdict: Dict[str, Any]) -> RiskSignal:
@@ -276,9 +372,6 @@ class RiskRepository:
 
     @classmethod
     def get_risk(cls, risk_id: str) -> Optional[RiskSignal]:
-        if risk_id in cls._risks_store:
-            return cls._risks_store[risk_id]
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM detected_risks WHERE risk_id = ?", (risk_id,))
@@ -301,6 +394,7 @@ class RiskRepository:
         warehouse_id: Optional[str] = None,
         supplier_id: Optional[str] = None
     ) -> List[RiskSignal]:
+        cls.sync_converted_risk_statuses()
         conn = get_db_connection()
         cursor = conn.cursor()
 

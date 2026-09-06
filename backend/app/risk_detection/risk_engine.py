@@ -38,7 +38,7 @@ class RiskDetectionEngine:
         cls,
         dataset: Dict[str, Any],
         trigger_type: str = "MANUAL",
-        auto_convert_critical: bool = True
+        auto_convert_critical: bool = False
     ) -> Dict[str, Any]:
         t0 = time.time()
         start_iso = datetime.now(timezone.utc).isoformat()
@@ -88,7 +88,9 @@ class RiskDetectionEngine:
         
         if auto_convert_critical:
             for s in validated_signals:
-                if s.status == RiskStatus.VALIDATED and s.severity in [RiskSeverity.CRITICAL, RiskSeverity.HIGH]:
+                st_val = s.status.value if hasattr(s.status, "value") else str(s.status)
+                sev_val = s.severity.value if hasattr(s.severity, "value") else str(s.severity)
+                if st_val == "VALIDATED" and sev_val in ["CRITICAL", "HIGH"]:
                     # Create disruption if not duplicate
                     disruption_dict = cls._promote_risk_to_disruption(s)
                     if disruption_dict:
@@ -102,9 +104,16 @@ class RiskDetectionEngine:
         type_counts: Dict[str, int] = {}
         sev_counts: Dict[str, int] = {}
         for s in validated_signals:
-            type_counts[s.risk_type.value] = type_counts.get(s.risk_type.value, 0) + 1
-            sev_counts[s.severity.value] = sev_counts.get(s.severity.value, 0) + 1
+            t_val = s.risk_type.value if hasattr(s.risk_type, "value") else str(s.risk_type)
+            s_val = s.severity.value if hasattr(s.severity, "value") else str(s.severity)
+            type_counts[t_val] = type_counts.get(t_val, 0) + 1
+            sev_counts[s_val] = sev_counts.get(s_val, 0) + 1
             
+        validated_count = sum(
+            1 for s in validated_signals 
+            if (s.status.value if hasattr(s.status, "value") else str(s.status)) in ["VALIDATED", "CONVERTED_TO_DISRUPTION"]
+        )
+
         run_record = RiskDetectionRun(
             run_id=run_id,
             started_at=start_iso,
@@ -119,7 +128,7 @@ class RiskDetectionEngine:
             total_risks_detected=len(validated_signals),
             risks_by_type=type_counts,
             risks_by_severity=sev_counts,
-            validated_risks_count=sum(1 for s in validated_signals if s.status in [RiskStatus.VALIDATED, RiskStatus.CONVERTED_TO_DISRUPTION]),
+            validated_risks_count=validated_count,
             disruptions_created_count=converted_count,
             status="SUCCESS"
         )

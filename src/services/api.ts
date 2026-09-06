@@ -77,7 +77,7 @@ export async function runRiskDetectionScan(triggerType: string = 'MANUAL'): Prom
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       trigger_type: triggerType,
-      auto_convert_critical: true
+      auto_convert_critical: false
     })
   });
   if (!res.ok) {

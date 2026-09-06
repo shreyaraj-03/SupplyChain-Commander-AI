@@ -87,7 +87,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
   return (
     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6" id="ai-detected-risks-section">
       {/* Executive Business Header & Trigger */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
@@ -105,30 +105,31 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Telemetry Pills & Action Button */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 font-bold border border-rose-200 flex items-center gap-1">
+          {/* Telemetry Pills */}
+          <div className="flex flex-wrap items-center gap-2 text-xs pt-2">
+            <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold border border-rose-200 flex items-center gap-1">
               🔴 {criticalCount} Critical
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-200 flex items-center gap-1">
               🟠 {highCount} High
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
               ✓ {convertedCount} Incidents
             </span>
           </div>
+        </div>
 
+        {/* Topmost Right Aligned Run Autonomous Scan Button */}
+        <div className="flex-shrink-0 self-start sm:self-center">
           <button
             id="run-risk-scan-btn"
             onClick={onScan}
             disabled={isScanning}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 flex items-center gap-2 transition disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/30 flex items-center gap-2 transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-            <span>{isScanning ? 'Running Scan...' : 'Run Autonomous Scan'}</span>
+            <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
+            <span>{isScanning ? 'Scanning Telemetry...' : 'Run Autonomous Scan'}</span>
           </button>
         </div>
       </div>

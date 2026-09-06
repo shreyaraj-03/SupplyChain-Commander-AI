@@ -109,7 +109,7 @@ function getMergedDisruptions(): any[] {
 
   // Add static disruptions first
   for (const d of disruptions) {
-    const key = `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`;
+    const key = d.disruption_id || `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`;
     mapByEntity.set(key, d);
   }
 
@@ -217,7 +217,7 @@ function prewarmActiveDisruptions(list: any[]) {
       const result = await runPythonRiskDetection({
         action: 'run_scan',
         trigger_type: trigger_type || 'MANUAL',
-        auto_convert_critical: auto_convert_critical !== false
+        auto_convert_critical: auto_convert_critical === true
       });
       res.json(result);
     } catch (err: any) {

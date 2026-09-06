@@ -75,16 +75,37 @@ class RiskValidator:
         min_orders = cfg.get("min_orders_affected", 2)
         min_val_score = cfg.get("min_validation_score", 60.0)
         
+        # Merge static and dynamic disruptions from RiskRepository
+        try:
+            dynamic_disruptions = RiskRepository.list_dynamic_disruptions()
+        except Exception:
+            dynamic_disruptions = []
+
+        all_disruptions = list(existing_disruptions) + dynamic_disruptions
+
         active_disruption_keys = set()
-        for d in existing_disruptions:
+        for d in all_disruptions:
             if d.get("status") in ["ACTIVE", "INVESTIGATING"]:
                 p_id = d.get("affected_product_id", "")
                 w_id = d.get("destination_warehouse_id", "")
                 s_id = d.get("entity_id", "")
-                active_disruption_keys.add(f"{p_id}__{w_id}")
-                active_disruption_keys.add(f"{s_id}")
+                if p_id and w_id:
+                    active_disruption_keys.add(f"{p_id}__{w_id}")
+                if s_id:
+                    active_disruption_keys.add(f"{s_id}")
 
         for s in raw_signals:
+            # 0. Check if risk signal was already converted to a disruption in DB/cache
+            existing_risk = RiskRepository.get_risk(s.risk_id)
+            matching_dyn = next((d for d in dynamic_disruptions if d.get("risk_id") == s.risk_id), None)
+
+            if (existing_risk and existing_risk.status == RiskStatus.CONVERTED_TO_DISRUPTION) or matching_dyn:
+                s.status = RiskStatus.CONVERTED_TO_DISRUPTION
+                s.converted_at = (existing_risk.converted_at if existing_risk else None) or (matching_dyn.get("reported_at") if matching_dyn else None) or datetime.now(timezone.utc).isoformat()
+                s.associated_disruption_id = (existing_risk.associated_disruption_id if existing_risk else None) or (matching_dyn.get("disruption_id") if matching_dyn else None)
+                validated_signals.append(s)
+                continue
+
             # Check business impact thresholds
             has_sufficient_impact = (
                 s.estimated_revenue_at_risk >= min_rev or

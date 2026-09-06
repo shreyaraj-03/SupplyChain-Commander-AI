@@ -33,7 +33,7 @@ def main():
         
         if action == "run_scan":
             trigger_type = input_data.get("trigger_type", "MANUAL")
-            auto_convert = input_data.get("auto_convert_critical", True)
+            auto_convert = input_data.get("auto_convert_critical", False)
             result = RiskDetectionEngine.run_detection_scan(
                 dataset=dataset,
                 trigger_type=trigger_type,
