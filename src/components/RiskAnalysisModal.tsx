@@ -25,6 +25,19 @@ interface RiskAnalysisModalProps {
   onNavigateToOperations: (disruptionId?: string) => void;
 }
 
+const formatCreatedTime = (isoString?: string) => {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${dateStr} • ${timeStr}`;
+  } catch {
+    return isoString;
+  }
+};
+
 export const RiskAnalysisModal: React.FC<RiskAnalysisModalProps> = ({
   isOpen,
   onClose,
@@ -114,10 +127,18 @@ export const RiskAnalysisModal: React.FC<RiskAnalysisModalProps> = ({
         <div className="p-6 space-y-6 text-slate-800 flex-1">
           {/* Key Executive Summary */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-600" />
-              {risk.title || 'Supply Chain Risk Signal Detected'}
-            </h3>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
+                {risk.title || 'Supply Chain Risk Signal Detected'}
+              </h3>
+              {isConverted && risk.converted_at && (
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Converted to Incident: {formatCreatedTime(risk.converted_at)}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-700 leading-relaxed">
               {risk.description}
             </p>

@@ -117,14 +117,25 @@ export default function App() {
   };
 
   // Convert risk signal to active disruption event
-  const handleConvertRisk = async (riskId: string) => {
+  const handleConvertRisk = async (riskId: string, shouldNavigate: boolean = true) => {
     setIsConvertingId(riskId);
     try {
       const conv = await convertRiskToDisruption(riskId);
-      await loadData();
+      const [updatedDisr, updatedRisks] = await Promise.all([
+        fetchDisruptions(),
+        fetchRisks()
+      ]);
+      setDisruptions(updatedDisr);
+      setRisks(updatedRisks);
+
       if (conv && conv.disruption) {
-        const updatedDisr = await fetchDisruptions();
-        setDisruptions(updatedDisr);
+        const targetDisruption = updatedDisr.find((d) => d.disruption_id === conv.disruption.disruption_id) || conv.disruption;
+        setSelectedDisruption(targetDisruption);
+        runAgentInvestigation(targetDisruption.disruption_id);
+
+        if (shouldNavigate) {
+          setActivePerspective('operations');
+        }
       }
     } catch (err: any) {
       console.error('Convert risk error:', err);
@@ -141,10 +152,15 @@ export default function App() {
   };
 
   // Navigate to Operations Center perspective and select disruption
-  const handleNavigateToOperations = (disruptionId?: string) => {
+  const handleNavigateToOperations = async (disruptionId?: string) => {
     setActivePerspective('operations');
+    let currentList = disruptions;
+    if (!disruptionId || !disruptions.some((d) => d.disruption_id === disruptionId)) {
+      currentList = await fetchDisruptions();
+      setDisruptions(currentList);
+    }
     if (disruptionId) {
-      const target = disruptions.find((d) => d.disruption_id === disruptionId);
+      const target = currentList.find((d) => d.disruption_id === disruptionId);
       if (target) {
         handleSelectDisruption(target);
       }

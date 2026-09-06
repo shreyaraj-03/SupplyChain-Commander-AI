@@ -171,6 +171,13 @@ class RiskDetectionEngine:
             
         now_iso = datetime.now(timezone.utc).isoformat()
         
+        title_str = risk.title.strip() if risk.title and risk.title.strip() else (
+            f"{risk.risk_type.value.replace('_', ' ').title()} ({risk.product_id or risk.entity_id})"
+        )
+        desc_str = risk.description.strip() if risk.description and risk.description.strip() else (
+            risk.evidence.summary if risk.evidence and risk.evidence.summary else "Multi-indicator anomaly detected across telemetry stream."
+        )
+
         disruption_dict = {
             "disruption_id": disruption_id,
             "disruption_type": disruption_type.value,
@@ -180,9 +187,9 @@ class RiskDetectionEngine:
             "severity": risk.severity.value,
             "reported_at": now_iso,
             "expected_duration_days": int(risk.days_to_impact or 7),
-            "description": f"[AI DATA-DETECTED RISK] {risk.description} (Evidence: {risk.evidence.summary if risk.evidence else 'Multi-indicator anomaly detected'}).",
+            "description": f"[AI DATA-DETECTED RISK] {desc_str}",
             "status": "ACTIVE",
-            "scenario_tag": f"AI Detected: {risk.title}",
+            "scenario_tag": f"AI Detected: {title_str}",
             "affected_product_id": risk.product_id or "PROD_001",
             "destination_warehouse_id": risk.warehouse_id or "WH_BLR",
             "source": "DATA_DETECTED",

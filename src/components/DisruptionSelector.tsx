@@ -10,6 +10,19 @@ interface DisruptionSelectorProps {
   isInvestigating: boolean;
 }
 
+const formatCreatedTime = (isoString?: string) => {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${dateStr} • ${timeStr}`;
+  } catch {
+    return isoString;
+  }
+};
+
 export const DisruptionSelector: React.FC<DisruptionSelectorProps> = ({
   disruptions,
   selectedDisruptionId,
@@ -64,14 +77,16 @@ export const DisruptionSelector: React.FC<DisruptionSelectorProps> = ({
                     {d.severity} SEVERITY
                   </span>
                   <span className={`text-xs flex items-center gap-1 ${isSelected ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <Clock className="w-3.5 h-3.5" />
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
                     {d.expected_duration_days} Days Delay
                   </span>
                 </div>
 
                 {/* Scenario Tag */}
                 <h3 className="font-semibold text-base mb-1 line-clamp-1">
-                  {d.scenario_tag}
+                  {d.scenario_tag && d.scenario_tag.trim() !== 'AI Detected:'
+                    ? d.scenario_tag
+                    : `AI Detected: ${d.disruption_type ? d.disruption_type.replace('_', ' ') : 'Disruption'} (${d.affected_product_id})`}
                 </h3>
                 <p className={`text-xs line-clamp-2 mb-4 leading-relaxed ${isSelected ? 'text-slate-300' : 'text-slate-600'}`}>
                   {d.description}
@@ -85,8 +100,18 @@ export const DisruptionSelector: React.FC<DisruptionSelectorProps> = ({
                   </div>
                   <div className={`flex items-center gap-2 ${isSelected ? 'text-slate-300' : 'text-slate-600'}`}>
                     <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Target Hub: <strong>{d.destination_warehouse_id} (Bangalore)</strong></span>
+                    <span>Target Hub: <strong>{d.destination_warehouse_id} ({
+                      d.destination_warehouse_id === 'WH_BLR' ? 'Bangalore' :
+                      d.destination_warehouse_id === 'WH_DEL' ? 'Delhi NCR' :
+                      d.destination_warehouse_id === 'WH_BOM' ? 'Mumbai' : d.destination_warehouse_id
+                    })</strong></span>
                   </div>
+                  {d.reported_at && (
+                    <div className={`flex items-center gap-2 ${isSelected ? 'text-indigo-200' : 'text-slate-600'}`}>
+                      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Created: <strong className="font-semibold">{formatCreatedTime(d.reported_at)}</strong></span>
+                    </div>
+                  )}
                 </div>
               </div>
 

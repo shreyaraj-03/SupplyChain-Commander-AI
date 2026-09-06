@@ -31,84 +31,90 @@ class RiskRepository:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Migrate dynamic_disruptions.json
+        # Migrate dynamic_disruptions.json (only if table is empty or ignoring existing keys)
         legacy_disr_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "dynamic_disruptions.json")
         if os.path.exists(legacy_disr_path):
             try:
-                with open(legacy_disr_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    for disr_id, d in data.items():
-                        cursor.execute("""
-                        INSERT OR REPLACE INTO dynamic_disruptions (
-                            disruption_id, disruption_type, entity_type, entity_id, entity_name,
-                            severity, reported_at, expected_duration_days, description, status,
-                            scenario_tag, affected_product_id, destination_warehouse_id, source,
-                            risk_id, detection_method, detection_confidence, detected_at, validated_at, evidence_json
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            d.get("disruption_id"),
-                            d.get("disruption_type"),
-                            d.get("entity_type"),
-                            d.get("entity_id"),
-                            d.get("entity_name"),
-                            d.get("severity"),
-                            d.get("reported_at"),
-                            int(d.get("expected_duration_days", 0)),
-                            d.get("description"),
-                            d.get("status"),
-                            d.get("scenario_tag"),
-                            d.get("affected_product_id"),
-                            d.get("destination_warehouse_id"),
-                            d.get("source", "DATA_DETECTED"),
-                            d.get("risk_id"),
-                            d.get("detection_method"),
-                            float(d.get("detection_confidence", 0.0)) if d.get("detection_confidence") else None,
-                            d.get("detected_at"),
-                            d.get("validated_at"),
-                            json.dumps(d.get("detection_evidence", {}))
-                        ))
+                cursor.execute("SELECT COUNT(*) FROM dynamic_disruptions")
+                count = cursor.fetchone()[0]
+                if count == 0:
+                    with open(legacy_disr_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        for disr_id, d in data.items():
+                            cursor.execute("""
+                            INSERT OR IGNORE INTO dynamic_disruptions (
+                                disruption_id, disruption_type, entity_type, entity_id, entity_name,
+                                severity, reported_at, expected_duration_days, description, status,
+                                scenario_tag, affected_product_id, destination_warehouse_id, source,
+                                risk_id, detection_method, detection_confidence, detected_at, validated_at, evidence_json
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (
+                                d.get("disruption_id"),
+                                d.get("disruption_type"),
+                                d.get("entity_type"),
+                                d.get("entity_id"),
+                                d.get("entity_name"),
+                                d.get("severity"),
+                                d.get("reported_at"),
+                                int(d.get("expected_duration_days", 0)),
+                                d.get("description"),
+                                d.get("status"),
+                                d.get("scenario_tag"),
+                                d.get("affected_product_id"),
+                                d.get("destination_warehouse_id"),
+                                d.get("source", "DATA_DETECTED"),
+                                d.get("risk_id"),
+                                d.get("detection_method"),
+                                float(d.get("detection_confidence", 0.0)) if d.get("detection_confidence") else None,
+                                d.get("detected_at"),
+                                d.get("validated_at"),
+                                json.dumps(d.get("detection_evidence", {}))
+                            ))
             except Exception as e:
                 print(f"Legacy disruptions migration note: {e}")
 
-        # Migrate detected_risks.json
+        # Migrate detected_risks.json (only if table is empty or ignoring existing keys)
         legacy_risks_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "detected_risks.json")
         if os.path.exists(legacy_risks_path):
             try:
-                with open(legacy_risks_path, "r", encoding="utf-8") as f:
-                    rdata = json.load(f)
-                    for rid, rdict in rdata.items():
-                        ev = rdict.get("evidence") or {}
-                        detection_method = rdict.get("detection_method") or rdict.get("risk_type") or "DETERMINISTIC"
-                        detection_confidence = rdict.get("detection_confidence") or rdict.get("confidence") or 0.95
-                        entity_type = rdict.get("entity_type") or ("WAREHOUSE" if rdict.get("warehouse_id") else "SUPPLIER")
-                        entity_id = rdict.get("entity_id") or rdict.get("warehouse_id") or rdict.get("supplier_id") or "UNKNOWN"
-                        detected_at = rdict.get("detected_at") or datetime.now(timezone.utc).isoformat()
+                cursor.execute("SELECT COUNT(*) FROM detected_risks")
+                rcount = cursor.fetchone()[0]
+                if rcount == 0:
+                    with open(legacy_risks_path, "r", encoding="utf-8") as f:
+                        rdata = json.load(f)
+                        for rid, rdict in rdata.items():
+                            ev = rdict.get("evidence") or {}
+                            detection_method = rdict.get("detection_method") or rdict.get("risk_type") or "DETERMINISTIC"
+                            detection_confidence = rdict.get("detection_confidence") or rdict.get("confidence") or 0.95
+                            entity_type = rdict.get("entity_type") or ("WAREHOUSE" if rdict.get("warehouse_id") else "SUPPLIER")
+                            entity_id = rdict.get("entity_id") or rdict.get("warehouse_id") or rdict.get("supplier_id") or "UNKNOWN"
+                            detected_at = rdict.get("detected_at") or datetime.now(timezone.utc).isoformat()
 
-                        cursor.execute("""
-                        INSERT OR REPLACE INTO detected_risks (
-                            risk_id, risk_type, severity, status, detection_method,
-                            detection_confidence, entity_type, entity_id, product_id,
-                            warehouse_id, supplier_id, detected_at, validated_at, converted_at,
-                            converted_disruption_id, evidence_json
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            rdict.get("risk_id"),
-                            rdict.get("risk_type"),
-                            rdict.get("severity"),
-                            rdict.get("status"),
-                            detection_method,
-                            float(detection_confidence),
-                            entity_type,
-                            entity_id,
-                            rdict.get("product_id"),
-                            rdict.get("warehouse_id"),
-                            rdict.get("supplier_id"),
-                            detected_at,
-                            rdict.get("validated_at"),
-                            rdict.get("converted_at"),
-                            rdict.get("converted_disruption_id"),
-                            json.dumps(ev)
-                        ))
+                            cursor.execute("""
+                            INSERT OR IGNORE INTO detected_risks (
+                                risk_id, risk_type, severity, status, detection_method,
+                                detection_confidence, entity_type, entity_id, product_id,
+                                warehouse_id, supplier_id, detected_at, validated_at, converted_at,
+                                converted_disruption_id, evidence_json
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (
+                                rdict.get("risk_id"),
+                                rdict.get("risk_type"),
+                                rdict.get("severity"),
+                                rdict.get("status"),
+                                detection_method,
+                                float(detection_confidence),
+                                entity_type,
+                                entity_id,
+                                rdict.get("product_id"),
+                                rdict.get("warehouse_id"),
+                                rdict.get("supplier_id"),
+                                detected_at,
+                                rdict.get("validated_at"),
+                                rdict.get("converted_at"),
+                                rdict.get("converted_disruption_id"),
+                                json.dumps(ev)
+                            ))
             except Exception as e:
                 print(f"Legacy risks migration note: {e}")
 

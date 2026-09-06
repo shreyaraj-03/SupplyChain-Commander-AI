@@ -121,26 +121,23 @@ function getMergedDisruptions(): any[] {
     if (stdout && stdout.trim()) {
       const dynamicList = JSON.parse(stdout.trim()) as any[];
       for (const d of dynamicList) {
-        const entityKey = d.entity_id
+        const entityKey = d.disruption_id || (d.entity_id
           ? `${d.entity_id}__${d.disruption_type}`
-          : `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`;
-        const existing = mapByEntity.get(entityKey);
-        if (!existing) {
-          mapByEntity.set(entityKey, d);
-        } else if (
-          d.reported_at &&
-          existing.reported_at &&
-          new Date(d.reported_at).getTime() > new Date(existing.reported_at).getTime()
-        ) {
-          mapByEntity.set(entityKey, d);
-        }
+          : `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`);
+        mapByEntity.set(entityKey, d);
       }
     }
   } catch (err) {
     console.error('Error fetching dynamic disruptions from DB:', err);
   }
 
-  return Array.from(mapByEntity.values());
+  const merged = Array.from(mapByEntity.values());
+  merged.sort((a, b) => {
+    const timeA = a.reported_at ? new Date(a.reported_at).getTime() : 0;
+    const timeB = b.reported_at ? new Date(b.reported_at).getTime() : 0;
+    return timeB - timeA;
+  });
+  return merged;
 }
 
 async function startServer() {

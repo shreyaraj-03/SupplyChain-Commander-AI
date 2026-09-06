@@ -36,6 +36,19 @@ interface AiDetectedRisksViewProps {
   isConvertingId?: string | null;
 }
 
+const formatCreatedTime = (isoString?: string) => {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${dateStr} • ${timeStr}`;
+  } catch {
+    return isoString;
+  }
+};
+
 export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
   risks,
   onScan,
@@ -296,10 +309,18 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
                       )}
                     </div>
 
-                    <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(risk.detected_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="flex flex-col items-end gap-0.5 text-right">
+                      <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        Detected: {formatCreatedTime(risk.detected_at)}
+                      </span>
+                      {isConverted && risk.converted_at && (
+                        <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Converted: {formatCreatedTime(risk.converted_at)}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Title & Description */}
