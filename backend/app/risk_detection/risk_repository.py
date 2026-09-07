@@ -318,23 +318,32 @@ class RiskRepository:
         ev_dict = risk.evidence.to_dict() if risk.evidence else {}
         cursor.execute("""
         INSERT OR REPLACE INTO detected_risks (
-            risk_id, risk_type, severity, status, detection_method,
-            detection_confidence, entity_type, entity_id, product_id,
-            warehouse_id, supplier_id, detected_at, validated_at, converted_at,
-            converted_disruption_id, evidence_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            risk_id, risk_type, severity, status, title, description, detection_method,
+            detection_confidence, entity_type, entity_id, product_id, product_name,
+            warehouse_id, warehouse_name, supplier_id, supplier_name,
+            estimated_revenue_at_risk, orders_affected_count, days_to_impact,
+            detected_at, validated_at, converted_at, converted_disruption_id, evidence_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             risk.risk_id,
             risk.risk_type.value if hasattr(risk.risk_type, "value") else str(risk.risk_type),
             risk.severity.value if hasattr(risk.severity, "value") else str(risk.severity),
             risk.status.value if hasattr(risk.status, "value") else str(risk.status),
+            risk.title,
+            risk.description,
             getattr(risk, "detection_method", risk.risk_type.value if hasattr(risk.risk_type, "value") else str(risk.risk_type)),
             getattr(risk, "confidence", 0.95),
             getattr(risk, "entity_type", "WAREHOUSE" if risk.warehouse_id else "SUPPLIER"),
             getattr(risk, "entity_id", risk.warehouse_id or risk.supplier_id or "UNKNOWN"),
             risk.product_id,
+            risk.product_name,
             risk.warehouse_id,
+            risk.warehouse_name,
             risk.supplier_id,
+            risk.supplier_name,
+            risk.estimated_revenue_at_risk,
+            risk.orders_affected_count,
+            risk.days_to_impact,
             risk.detected_at,
             risk.validated_at,
             risk.converted_at,
@@ -351,20 +360,78 @@ class RiskRepository:
         ev_data = json.loads(rdict["evidence_json"]) if rdict.get("evidence_json") else {}
         ev = RiskEvidence(**ev_data) if isinstance(ev_data, dict) and ev_data else None
         
+        p_id = rdict.get("product_id")
+        w_id = rdict.get("warehouse_id")
+        s_id = rdict.get("supplier_id")
+        
+        p_name = rdict.get("product_name")
+        w_name = rdict.get("warehouse_name")
+        s_name = rdict.get("supplier_name")
+        title = rdict.get("title")
+        desc = rdict.get("description")
+
+        if not p_name or not w_name or not title or "undefined" in str(title).lower():
+            try:
+                from backend.app.tools.mcp_tools import _load_dataset
+                ds = _load_dataset()
+                if p_id and (not p_name or p_name == "None"):
+                    prod = next((p for p in ds.get("products", []) if p.get("product_id") == p_id), None)
+                    if prod:
+                        p_name = prod.get("product_name")
+                if w_id and (not w_name or w_name == "None"):
+                    wh = next((w for w in ds.get("warehouses", []) if w.get("warehouse_id") == w_id), None)
+                    if wh:
+                        w_name = wh.get("warehouse_name")
+                if s_id and (not s_name or s_name == "None"):
+                    supp = next((s for s in ds.get("suppliers", []) if s.get("supplier_id") == s_id), None)
+                    if supp:
+                        s_name = supp.get("supplier_name")
+            except Exception:
+                pass
+
+        if not title or "undefined" in str(title).lower():
+            risk_type_str = str(rdict.get("risk_type", ""))
+            type_display = {
+                "INVENTORY_DEPLETION_RISK": "Stockout Risk",
+                "SUPPLY_DEMAND_GAP": "Supply Deficit",
+                "SHIPMENT_DELAY_RISK": "In-Transit Shipment Delay",
+                "SUPPLIER_PERFORMANCE_RISK": "Supplier Performance Deterioration",
+                "WAREHOUSE_CAPACITY_RISK": "Warehouse Capacity Bottleneck",
+                "DEMAND_SPIKE": "Demand Surge"
+            }.get(risk_type_str, "Supply Network Risk")
+            
+            target = p_name or s_name or w_name or p_id or s_id or w_id or "Network Element"
+            location = f" ({w_name})" if w_name and target != w_name else ""
+            title = f"{type_display}: {target}{location}"
+
+        if not desc or desc == "None":
+            desc = ev.summary if ev else "Multi-indicator supply network anomaly detected."
+
         clean_dict = {
             "risk_id": rdict.get("risk_id"),
             "risk_type": RiskType(rdict.get("risk_type")),
             "severity": RiskSeverity(rdict.get("severity")),
             "status": RiskStatus(rdict.get("status")),
-            "product_id": rdict.get("product_id"),
-            "warehouse_id": rdict.get("warehouse_id"),
-            "supplier_id": rdict.get("supplier_id"),
+            "title": title,
+            "description": desc,
+            "product_id": p_id,
+            "product_name": p_name,
+            "warehouse_id": w_id,
+            "warehouse_name": w_name,
+            "supplier_id": s_id,
+            "supplier_name": s_name,
+            "metric": rdict.get("metric", "anomaly_score"),
+            "metric_value": float(rdict.get("metric_value") or (ev.observed_value if ev else 0.0)),
+            "threshold": float(rdict.get("threshold") or (ev.threshold_value if ev else 0.0)),
+            "confidence": float(rdict.get("detection_confidence") or 0.95),
+            "estimated_revenue_at_risk": float(rdict.get("estimated_revenue_at_risk") or 0.0),
+            "orders_affected_count": int(rdict.get("orders_affected_count") or 0),
+            "days_to_impact": float(rdict.get("days_to_impact")) if rdict.get("days_to_impact") is not None else None,
             "detected_at": rdict.get("detected_at"),
             "validated_at": rdict.get("validated_at"),
             "converted_at": rdict.get("converted_at"),
             "associated_disruption_id": rdict.get("converted_disruption_id"),
-            "evidence": ev,
-            "confidence": float(rdict.get("detection_confidence") or 0.95)
+            "evidence": ev
         }
         valid_fields = set(RiskSignal.__dataclass_fields__.keys())
         filtered = {k: v for k, v in clean_dict.items() if k in valid_fields and v is not None}

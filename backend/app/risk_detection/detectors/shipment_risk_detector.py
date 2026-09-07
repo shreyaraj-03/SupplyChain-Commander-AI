@@ -108,7 +108,7 @@ class ShipmentRiskDetector:
                 risk_type=RiskType.SHIPMENT_DELAY_RISK,
                 severity=severity,
                 status=RiskStatus.DETECTED,
-                title=f"In-Transit Shipment Delay: {shipment_id} ({product_name})",
+                title=f"In-Transit Delay: Shipment {shipment_id} ({quantity} units of {product_name} from {supplier_name})",
                 description=f"{delay_days}-day transit delay for {quantity} units of {product_name} from {supplier_name} to {warehouse_name}.",
                 product_id=product_id,
                 product_name=product_name,

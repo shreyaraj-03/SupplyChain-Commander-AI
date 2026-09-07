@@ -104,7 +104,7 @@ class WarehouseRiskDetector:
                     risk_type=RiskType.WAREHOUSE_CAPACITY_RISK,
                     severity=severity,
                     status=RiskStatus.DETECTED,
-                    title=f"Warehouse Capacity Bottleneck: {warehouse_name}",
+                    title=f"Warehouse Capacity Bottleneck: {warehouse_name} ({projected_utilization*100:.0f}% Storage Utilization)",
                     description=f"{warehouse_name} projected at {projected_utilization*100:.1f}% utilization due to incoming delivery waves.",
                     warehouse_id=warehouse_id,
                     warehouse_name=warehouse_name,

@@ -115,7 +115,7 @@ class InventoryRiskDetector:
                     risk_type=RiskType.INVENTORY_DEPLETION_RISK,
                     severity=severity,
                     status=RiskStatus.DETECTED,
-                    title=f"Inventory Depletion Risk: {product_name} ({warehouse_name})",
+                    title=f"Stockout Risk: {product_name} ({days_of_supply} Days of Supply at {warehouse_name})",
                     description=f"Projected inventory stockout in {days_of_supply} days for {product_name} at {warehouse_name}.",
                     product_id=product_id,
                     product_name=product_name,

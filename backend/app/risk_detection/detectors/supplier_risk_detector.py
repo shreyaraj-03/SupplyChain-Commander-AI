@@ -97,7 +97,7 @@ class SupplierRiskDetector:
                     risk_type=RiskType.SUPPLIER_PERFORMANCE_RISK,
                     severity=severity,
                     status=RiskStatus.DETECTED,
-                    title=f"Supplier Performance Risk: {supplier_name}",
+                    title=f"Supplier Performance Deterioration: {supplier_name} (OTD: {current_otd*100:.0f}%, {avg_delay:.1f} Days Late)",
                     description=f"Performance deterioration detected for {supplier_name} (OTD dropped {otd_drop*100:.1f}% with {avg_delay:.1f} days avg delay).",
                     supplier_id=supplier_id,
                     supplier_name=supplier_name,

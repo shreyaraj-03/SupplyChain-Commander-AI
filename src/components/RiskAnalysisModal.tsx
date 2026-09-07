@@ -130,7 +130,9 @@ export const RiskAnalysisModal: React.FC<RiskAnalysisModalProps> = ({
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-600" />
-                {risk.title || 'Supply Chain Risk Signal Detected'}
+                {risk.title && !risk.title.toLowerCase().includes('undefined')
+                  ? risk.title
+                  : `${risk.product_name || risk.warehouse_name || risk.supplier_name || 'Supply Chain Risk Signal Detected'}`}
               </h3>
               {isConverted && risk.converted_at && (
                 <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1">

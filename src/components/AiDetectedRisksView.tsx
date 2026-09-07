@@ -284,6 +284,39 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
               DEMAND_SPIKE: 'Demand Surge Spike'
             }[risk.risk_type] || risk.risk_type;
 
+function getCleanRiskHeading(risk: RiskSignal): string {
+  const typeLabelMap: Record<string, string> = {
+    INVENTORY_DEPLETION_RISK: 'Stockout Risk',
+    SUPPLY_DEMAND_GAP: 'Supply Deficit',
+    SHIPMENT_DELAY_RISK: 'In-Transit Shipment Delay',
+    SUPPLIER_PERFORMANCE_RISK: 'Supplier Performance Deterioration',
+    WAREHOUSE_CAPACITY_RISK: 'Warehouse Capacity Bottleneck',
+    DEMAND_SPIKE: 'Demand Surge'
+  };
+  const categoryLabel = typeLabelMap[risk.risk_type] || 'Supply Chain Risk';
+
+  if (risk.title && risk.title.trim() && !risk.title.toLowerCase().includes('undefined')) {
+    return risk.title.trim();
+  }
+
+  const targetName = (risk.product_name && risk.product_name !== 'None' ? risk.product_name : null) ||
+                     (risk.supplier_name && risk.supplier_name !== 'None' ? risk.supplier_name : null) ||
+                     (risk.warehouse_name && risk.warehouse_name !== 'None' ? risk.warehouse_name : null) ||
+                     (risk.product_id ? `Product ${risk.product_id}` : null) ||
+                     (risk.supplier_id ? `Supplier ${risk.supplier_id}` : null) ||
+                     (risk.warehouse_id ? `Warehouse ${risk.warehouse_id}` : null);
+
+  const location = risk.warehouse_name && targetName !== risk.warehouse_name && risk.warehouse_name !== 'None'
+    ? ` (${risk.warehouse_name})`
+    : '';
+
+  if (targetName && !targetName.toLowerCase().includes('undefined')) {
+    return `${categoryLabel}: ${targetName}${location}`;
+  }
+
+  return `${categoryLabel} Incident (#${risk.risk_id.replace('RSK_', '')})`;
+}
+
             return (
               <div
                 key={risk.risk_id}
@@ -327,7 +360,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
                   {/* Title & Description */}
                   <div>
                     <h3 className="font-bold text-slate-900 text-base">
-                      {risk.title || `${typeLabel}: ${risk.product_name || risk.entity_id}`}
+                      {getCleanRiskHeading(risk)}
                     </h3>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                       {risk.description}

@@ -57,7 +57,11 @@ export const ConvertRiskConfirmationModal: React.FC<ConvertRiskConfirmationModal
           {/* Risk Summary Card */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 text-xs">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-slate-900 text-sm">{risk.title || risk.risk_id}</span>
+              <span className="font-bold text-slate-900 text-sm">
+                {risk.title && !risk.title.toLowerCase().includes('undefined')
+                  ? risk.title
+                  : (risk.product_name || risk.risk_id)}
+              </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase bg-rose-100 text-rose-800 border border-rose-200">
                 {risk.severity} SEVERITY
               </span>

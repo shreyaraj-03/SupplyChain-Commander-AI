@@ -107,7 +107,7 @@ class DemandRiskDetector:
                     risk_type=RiskType.DEMAND_SPIKE,
                     severity=severity,
                     status=RiskStatus.DETECTED,
-                    title=f"Demand Spike: {product_name} ({warehouse_name})",
+                    title=f"Demand Surge: {product_name} (+{pct_increase*100:.0f}% at {warehouse_name})",
                     description=f"Demand for {product_name} is running {pct_increase*100:.1f}% above historical baseline at {warehouse_name}.",
                     product_id=product_id,
                     product_name=product_name,

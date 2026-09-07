@@ -35,13 +35,21 @@ def init_db():
         risk_type TEXT NOT NULL,
         severity TEXT NOT NULL,
         status TEXT NOT NULL,
+        title TEXT,
+        description TEXT,
         detection_method TEXT,
         detection_confidence REAL,
         entity_type TEXT,
         entity_id TEXT,
         product_id TEXT,
+        product_name TEXT,
         warehouse_id TEXT,
+        warehouse_name TEXT,
         supplier_id TEXT,
+        supplier_name TEXT,
+        estimated_revenue_at_risk REAL,
+        orders_affected_count INTEGER,
+        days_to_impact REAL,
         detected_at TEXT,
         validated_at TEXT,
         converted_at TEXT,
@@ -49,6 +57,23 @@ def init_db():
         evidence_json TEXT
     );
     """)
+
+    # Migrate existing SQLite table if columns were missing
+    new_cols = [
+        ("title", "TEXT"),
+        ("description", "TEXT"),
+        ("product_name", "TEXT"),
+        ("warehouse_name", "TEXT"),
+        ("supplier_name", "TEXT"),
+        ("estimated_revenue_at_risk", "REAL"),
+        ("orders_affected_count", "INTEGER"),
+        ("days_to_impact", "REAL")
+    ]
+    for col_name, col_type in new_cols:
+        try:
+            cursor.execute(f"ALTER TABLE detected_risks ADD COLUMN {col_name} {col_type};")
+        except Exception:
+            pass
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS dynamic_disruptions (

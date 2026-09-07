@@ -132,7 +132,7 @@ class SupplyGapDetector:
                     risk_type=RiskType.SUPPLY_DEMAND_GAP,
                     severity=severity,
                     status=RiskStatus.DETECTED,
-                    title=f"Supply-Demand Gap: {product_name} ({warehouse_name})",
+                    title=f"Supply Deficit: {product_name} (Shortfall of {supply_gap} units at {warehouse_name})",
                     description=f"{supply_gap}-unit supply shortfall projected over {horizon_days} days for {product_name} at {warehouse_name}.",
                     product_id=product_id,
                     product_name=product_name,
