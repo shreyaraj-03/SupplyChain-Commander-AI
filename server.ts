@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, spawnSync } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { disruptions } from './server/data/syntheticData.ts';
 
@@ -93,9 +93,10 @@ function runPythonInvestigation(disruptionId: string, weights?: Record<string, n
 
     py.on('close', (code) => {
       if (code !== 0) {
-        console.error('Python agent runner error:', stderr);
+        console.error(`Python runner error (code ${code}):`, stderr);
         return reject(new Error(`Python process exited with code ${code}: ${stderr}`));
       }
+
       try {
         const result = JSON.parse(stdout);
         investigationsStore[cacheKey] = result;
@@ -108,33 +109,58 @@ function runPythonInvestigation(disruptionId: string, weights?: Record<string, n
 }
 
 function getMergedDisruptions(): any[] {
-  const mapByEntity = new Map<string, any>();
+  const mapById = new Map<string, any>();
 
-  // Add static disruptions first
+  // 1. Add baseline static disruptions first
   for (const d of disruptions) {
     const key = d.disruption_id || `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`;
-    mapByEntity.set(key, d);
+    mapById.set(key, { ...d });
   }
 
-  // Merge dynamic disruptions from database via RiskRepository
+  // 2. Read dynamic disruptions from local persistent disk JSON (instant & reliable)
   try {
-    const pythonBin = getPythonBin();
-    const cmd = `${pythonBin} -c "from backend.app.risk_detection.risk_repository import RiskRepository; import json; print(json.dumps(RiskRepository.list_dynamic_disruptions()))"`;
-    const stdout = execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
-    if (stdout && stdout.trim()) {
-      const dynamicList = JSON.parse(stdout.trim()) as any[];
-      for (const d of dynamicList) {
-        const entityKey = d.disruption_id || (d.entity_id
-          ? `${d.entity_id}__${d.disruption_type}`
-          : `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`);
-        mapByEntity.set(entityKey, d);
+    const dynPath = path.join(process.cwd(), 'backend', 'data', 'dynamic_disruptions.json');
+    if (fs.existsSync(dynPath)) {
+      const raw = fs.readFileSync(dynPath, 'utf-8');
+      if (raw && raw.trim()) {
+        const parsed = JSON.parse(raw);
+        const list = Array.isArray(parsed) ? parsed : Object.values(parsed);
+        for (const d of list) {
+          if (!d) continue;
+          const key = d.disruption_id || (d.entity_id
+            ? `${d.entity_id}__${d.disruption_type}`
+            : `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`);
+          mapById.set(key, d);
+        }
       }
     }
   } catch (err) {
-    console.error('Error fetching dynamic disruptions from DB:', err);
+    console.error('Error reading dynamic disruptions from disk:', err);
   }
 
-  const merged = Array.from(mapByEntity.values());
+  // 3. Sync from Python SQLite database if available
+  try {
+    const pythonBin = getPythonBin();
+    const result = spawnSync(pythonBin, [
+      '-c',
+      'from backend.app.risk_detection.risk_repository import RiskRepository; import json; print(json.dumps(RiskRepository.list_dynamic_disruptions()))'
+    ], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'], timeout: 2000 });
+    
+    if (result.stdout && result.stdout.trim()) {
+      const dynamicList = JSON.parse(result.stdout.trim()) as any[];
+      for (const d of dynamicList) {
+        if (!d) continue;
+        const key = d.disruption_id || (d.entity_id
+          ? `${d.entity_id}__${d.disruption_type}`
+          : `${d.affected_product_id}__${d.destination_warehouse_id}__${d.disruption_type}`);
+        mapById.set(key, d);
+      }
+    }
+  } catch (err) {
+    // Non-blocking fallback
+  }
+
+  const merged = Array.from(mapById.values());
   merged.sort((a, b) => {
     const timeA = a.reported_at ? new Date(a.reported_at).getTime() : 0;
     const timeB = b.reported_at ? new Date(b.reported_at).getTime() : 0;
