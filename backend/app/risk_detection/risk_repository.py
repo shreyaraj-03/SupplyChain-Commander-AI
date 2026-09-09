@@ -366,14 +366,118 @@ class RiskRepository:
         conn.close()
         cls._persist_risk_to_disk(risk.to_dict())
 
-        # Stream sync to BigQuery if configured
-        try:
-            from backend.scripts.seed_bigquery import sync_detected_risk_to_bigquery
-            sync_detected_risk_to_bigquery(risk.to_dict())
-        except Exception:
-            pass
+        # Stream sync to BigQuery if explicitly enabled for single item
+        if sync_bq:
+            try:
+                import threading
+                from backend.scripts.seed_bigquery import sync_detected_risk_to_bigquery
+                threading.Thread(target=sync_detected_risk_to_bigquery, args=(risk.to_dict(),), daemon=True).start()
+            except Exception:
+                pass
 
         return risk
+
+    @classmethod
+    def save_all_risks(cls, risks: List[RiskSignal], sync_bq: bool = True) -> List[RiskSignal]:
+        """Save a batch of RiskSignals into SQLite, memory, disk, and BigQuery efficiently in a single operation."""
+        if not risks:
+            return []
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Load existing converted statuses in bulk
+        risk_ids = [r.risk_id for r in risks]
+        placeholders = ",".join("?" for _ in risk_ids)
+        cursor.execute(f"SELECT risk_id, status, converted_at, converted_disruption_id FROM detected_risks WHERE risk_id IN ({placeholders})", risk_ids)
+        existing_map = {row["risk_id"]: dict(row) for row in cursor.fetchall()}
+
+        rows_to_insert = []
+        disk_records = {}
+
+        for risk in risks:
+            ex_dict = existing_map.get(risk.risk_id)
+            if ex_dict and ex_dict.get("status") == "CONVERTED_TO_DISRUPTION":
+                risk.status = RiskStatus.CONVERTED_TO_DISRUPTION
+                if not risk.converted_at and ex_dict.get("converted_at"):
+                    risk.converted_at = ex_dict.get("converted_at")
+                if not getattr(risk, "associated_disruption_id", None) and ex_dict.get("converted_disruption_id"):
+                    risk.associated_disruption_id = ex_dict.get("converted_disruption_id")
+
+            cls._risks_store[risk.risk_id] = risk
+            r_dict = risk.to_dict()
+            disk_records[risk.risk_id] = r_dict
+
+            ev_dict = risk.evidence.to_dict() if risk.evidence else {}
+            rows_to_insert.append((
+                risk.risk_id,
+                risk.risk_type.value if hasattr(risk.risk_type, "value") else str(risk.risk_type),
+                risk.severity.value if hasattr(risk.severity, "value") else str(risk.severity),
+                risk.status.value if hasattr(risk.status, "value") else str(risk.status),
+                risk.title,
+                risk.description,
+                getattr(risk, "detection_method", risk.risk_type.value if hasattr(risk.risk_type, "value") else str(risk.risk_type)),
+                getattr(risk, "confidence", 0.95),
+                getattr(risk, "entity_type", "WAREHOUSE" if risk.warehouse_id else "SUPPLIER"),
+                getattr(risk, "entity_id", risk.warehouse_id or risk.supplier_id or "UNKNOWN"),
+                risk.product_id,
+                risk.product_name,
+                risk.warehouse_id,
+                risk.warehouse_name,
+                risk.supplier_id,
+                risk.supplier_name,
+                risk.estimated_revenue_at_risk,
+                risk.orders_affected_count,
+                risk.days_to_impact,
+                risk.detected_at,
+                risk.validated_at,
+                risk.converted_at,
+                getattr(risk, "associated_disruption_id", getattr(risk, "converted_disruption_id", None)),
+                json.dumps(ev_dict)
+            ))
+
+        cursor.executemany("""
+        INSERT OR REPLACE INTO detected_risks (
+            risk_id, risk_type, severity, status, title, description, detection_method,
+            detection_confidence, entity_type, entity_id, product_id, product_name,
+            warehouse_id, warehouse_name, supplier_id, supplier_name,
+            estimated_revenue_at_risk, orders_affected_count, days_to_impact,
+            detected_at, validated_at, converted_at, converted_disruption_id, evidence_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, rows_to_insert)
+
+        conn.commit()
+        conn.close()
+
+        # Update disk file in a single bulk write
+        try:
+            data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+            os.makedirs(data_dir, exist_ok=True)
+            risk_path = os.path.join(data_dir, "detected_risks.json")
+            data = {}
+            if os.path.exists(risk_path):
+                try:
+                    with open(risk_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {}
+            data.update(disk_records)
+            with open(risk_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Disk bulk risk persistence note: {e}")
+
+        # Stream batch sync to BigQuery asynchronously to avoid blocking API responses
+        if sync_bq:
+            try:
+                import threading
+                from backend.scripts.seed_bigquery import sync_batch_risks_to_bigquery
+                payload = list(disk_records.values())
+                threading.Thread(target=sync_batch_risks_to_bigquery, args=(payload,), daemon=True).start()
+            except Exception as e:
+                print(f"BigQuery batch stream dispatch note: {e}")
+
+        return risks
 
     @classmethod
     def _row_to_risk_signal(cls, rdict: Dict[str, Any]) -> RiskSignal:

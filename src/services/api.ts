@@ -81,7 +81,8 @@ export async function runRiskDetectionScan(triggerType: string = 'MANUAL'): Prom
     })
   });
   if (!res.ok) {
-    throw new Error('Failed to run autonomous risk detection scan');
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Autonomous risk detection scan failed with status ${res.status}`);
   }
   return await res.json();
 }
@@ -92,7 +93,8 @@ export async function convertRiskToDisruption(riskId: string): Promise<any> {
     headers: { 'Content-Type': 'application/json' }
   });
   if (!res.ok) {
-    throw new Error(`Failed to convert risk ${riskId} to disruption`);
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Failed to convert risk ${riskId} to disruption`);
   }
   return await res.json();
 }

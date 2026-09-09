@@ -1,4 +1,55 @@
 {
+  "RSK_INVENTORY_PROD_003_WH_BLR": {
+    "risk_id": "RSK_INVENTORY_PROD_003_WH_BLR",
+    "risk_type": "INVENTORY_DEPLETION_RISK",
+    "severity": "CRITICAL",
+    "status": "CONVERTED_TO_DISRUPTION",
+    "source": "DATA_ANALYSIS",
+    "title": "Stockout Risk: Neural Accelerator Module Tensor-X (0.0 Days of Supply at Bangalore Central Fulfillment Hub)",
+    "description": "Projected inventory stockout in 0.0 days for Neural Accelerator Module Tensor-X at Bangalore Central Fulfillment Hub.",
+    "product_id": "PROD_003",
+    "product_name": "Neural Accelerator Module Tensor-X",
+    "warehouse_id": "WH_BLR",
+    "warehouse_name": "Bangalore Central Fulfillment Hub",
+    "supplier_id": null,
+    "supplier_name": null,
+    "metric": "anomaly_score",
+    "metric_value": 0.0,
+    "threshold": 5.0,
+    "confidence": 0.96,
+    "estimated_revenue_at_risk": 5800000.0,
+    "orders_affected_count": 24,
+    "days_to_impact": 0.0,
+    "evidence": {
+      "metric_name": "days_of_supply",
+      "observed_value": 0.0,
+      "baseline_value": 8.0,
+      "threshold_value": 5.0,
+      "unit": "days",
+      "summary": "Neural Accelerator Module Tensor-X at Bangalore Central Fulfillment Hub has only 0.0 days of supply remaining (20 available units vs 5.0 units/day burn rate).",
+      "drivers": [
+        "Current available inventory: 20 units (Safety buffer: 30 units).",
+        "Reserved demand: 120 units with burn rate of 5.0 units/day.",
+        "Projected stockout in approximately 0.0 days if replenishment is not expedited.",
+        "Incoming in-transit supply: 10 units."
+      ],
+      "raw_details": {
+        "available_quantity": 20.0,
+        "reserved_quantity": 120.0,
+        "safety_stock": 30.0,
+        "in_transit_quantity": 10.0,
+        "daily_demand": 5.0,
+        "days_of_supply": 0.0
+      }
+    },
+    "correlated_risk_ids": [],
+    "validation_score": 0.0,
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
+    "validated_at": null,
+    "converted_at": "2026-09-06T19:13:05.325442+00:00",
+    "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_003_WH_BLR",
+    "dismissal_reason": null
+  },
   "RSK_INVENTORY_PROD_004_WH_DEL": {
     "risk_id": "RSK_INVENTORY_PROD_004_WH_DEL",
     "risk_type": "INVENTORY_DEPLETION_RISK",
@@ -13,7 +64,7 @@
     "warehouse_name": "Delhi NCR Mega Logistics Depot",
     "supplier_id": null,
     "supplier_name": null,
-    "metric": "days_of_supply",
+    "metric": "anomaly_score",
     "metric_value": 0.0,
     "threshold": 5.0,
     "confidence": 0.98,
@@ -43,15 +94,63 @@
         "days_of_supply": 0.0
       }
     },
-    "correlated_risk_ids": [
-      "RSK_GAP_PROD_004_WH_DEL",
-      "RSK_SHIPMENT_SHP_7003"
-    ],
+    "correlated_risk_ids": [],
     "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": "2026-09-07T16:17:01.701225+00:00",
     "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_004_WH_DEL",
+    "dismissal_reason": null
+  },
+  "RSK_DEMAND_PROD_001_WH_BLR": {
+    "risk_id": "RSK_DEMAND_PROD_001_WH_BLR",
+    "risk_type": "DEMAND_SPIKE",
+    "severity": "CRITICAL",
+    "status": "CONVERTED_TO_DISRUPTION",
+    "source": "DATA_ANALYSIS",
+    "title": "Demand Surge: Laptop Pro X15 (Core i9 / 32GB) (+68% at Bangalore Central Fulfillment Hub)",
+    "description": "Demand for Laptop Pro X15 (Core i9 / 32GB) is running 68.0% above historical baseline at Bangalore Central Fulfillment Hub.",
+    "product_id": "PROD_001",
+    "product_name": "Laptop Pro X15 (Core i9 / 32GB)",
+    "warehouse_id": "WH_BLR",
+    "warehouse_name": "Bangalore Central Fulfillment Hub",
+    "supplier_id": null,
+    "supplier_name": null,
+    "metric": "anomaly_score",
+    "metric_value": 68.0,
+    "threshold": 30.0,
+    "confidence": 0.98,
+    "estimated_revenue_at_risk": 15300000.0,
+    "orders_affected_count": 5,
+    "days_to_impact": 2.0,
+    "evidence": {
+      "metric_name": "daily_demand_increase_pct",
+      "observed_value": 68.0,
+      "baseline_value": 21.4,
+      "threshold_value": 30.0,
+      "unit": "%",
+      "summary": "Daily demand for Laptop Pro X15 (Core i9 / 32GB) surged to 36.0 units/day (+68.0% over baseline of 21.4 units/day).",
+      "drivers": [
+        "Current daily demand of 36.0 units vs baseline of 21.4 units.",
+        "5 customer orders totaling 180.0 units in current active window.",
+        "Total order value exposure of \u20b915,300,000 across Bangalore Central Fulfillment Hub.",
+        "Multi-Signal Correlation: Confirmed by 3 additional independent risk signals."
+      ],
+      "raw_details": {
+        "current_daily_demand": 36.0,
+        "baseline_daily_demand": 21.428571428571427,
+        "pct_increase": 0.6800000000000002,
+        "total_demanded": 180.0,
+        "total_order_value": 15300000.0,
+        "order_count": 5
+      }
+    },
+    "correlated_risk_ids": [],
+    "validation_score": 0.0,
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
+    "validated_at": null,
+    "converted_at": "2026-09-06T19:18:06.027442+00:00",
+    "associated_disruption_id": "DISR_AUTO_DEMAND_PROD_001_WH_BLR",
     "dismissal_reason": null
   },
   "RSK_GAP_PROD_004_WH_DEL": {
@@ -68,7 +167,7 @@
     "warehouse_name": "Delhi NCR Mega Logistics Depot",
     "supplier_id": null,
     "supplier_name": null,
-    "metric": "supply_gap_units",
+    "metric": "anomaly_score",
     "metric_value": 110.0,
     "threshold": 20.0,
     "confidence": 0.98,
@@ -103,12 +202,9 @@
         "revenue_at_risk": 4620000.0
       }
     },
-    "correlated_risk_ids": [
-      "RSK_INVENTORY_PROD_004_WH_DEL",
-      "RSK_SHIPMENT_SHP_7003"
-    ],
+    "correlated_risk_ids": [],
     "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": "2026-09-07T16:17:01.720143+00:00",
     "associated_disruption_id": "DISR_AUTO_GAP_PROD_004_WH_DEL",
@@ -128,7 +224,7 @@
     "warehouse_name": "Delhi NCR Mega Logistics Depot",
     "supplier_id": "SUPP_DELTA",
     "supplier_name": "Delta Rapid Logistics & Semi",
-    "metric": "delay_days",
+    "metric": "anomaly_score",
     "metric_value": 8.0,
     "threshold": 4.0,
     "confidence": 0.98,
@@ -160,121 +256,12 @@
         "revenue_at_risk": 3150000.0
       }
     },
-    "correlated_risk_ids": [
-      "RSK_INVENTORY_PROD_004_WH_DEL",
-      "RSK_GAP_PROD_004_WH_DEL"
-    ],
+    "correlated_risk_ids": [],
     "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": "2026-09-07T16:17:01.734526+00:00",
     "associated_disruption_id": "DISR_AUTO_SHIPMENT_SHP_7003",
-    "dismissal_reason": null
-  },
-  "RSK_DEMAND_PROD_001_WH_BLR": {
-    "risk_id": "RSK_DEMAND_PROD_001_WH_BLR",
-    "risk_type": "DEMAND_SPIKE",
-    "severity": "CRITICAL",
-    "status": "CONVERTED_TO_DISRUPTION",
-    "source": "DATA_ANALYSIS",
-    "title": "Demand Surge: Laptop Pro X15 (Core i9 / 32GB) (+68% at Bangalore Central Fulfillment Hub)",
-    "description": "Demand for Laptop Pro X15 (Core i9 / 32GB) is running 68.0% above historical baseline at Bangalore Central Fulfillment Hub.",
-    "product_id": "PROD_001",
-    "product_name": "Laptop Pro X15 (Core i9 / 32GB)",
-    "warehouse_id": "WH_BLR",
-    "warehouse_name": "Bangalore Central Fulfillment Hub",
-    "supplier_id": null,
-    "supplier_name": null,
-    "metric": "demand_increase_pct",
-    "metric_value": 68.0,
-    "threshold": 30.0,
-    "confidence": 0.98,
-    "estimated_revenue_at_risk": 15300000.0,
-    "orders_affected_count": 5,
-    "days_to_impact": 2.0,
-    "evidence": {
-      "metric_name": "daily_demand_increase_pct",
-      "observed_value": 68.0,
-      "baseline_value": 21.4,
-      "threshold_value": 30.0,
-      "unit": "%",
-      "summary": "Daily demand for Laptop Pro X15 (Core i9 / 32GB) surged to 36.0 units/day (+68.0% over baseline of 21.4 units/day).",
-      "drivers": [
-        "Current daily demand of 36.0 units vs baseline of 21.4 units.",
-        "5 customer orders totaling 180.0 units in current active window.",
-        "Total order value exposure of \u20b915,300,000 across Bangalore Central Fulfillment Hub.",
-        "Multi-Signal Correlation: Confirmed by 3 additional independent risk signals."
-      ],
-      "raw_details": {
-        "current_daily_demand": 36.0,
-        "baseline_daily_demand": 21.428571428571427,
-        "pct_increase": 0.6800000000000002,
-        "total_demanded": 180.0,
-        "total_order_value": 15300000.0,
-        "order_count": 5
-      }
-    },
-    "correlated_risk_ids": [
-      "RSK_INVENTORY_PROD_001_WH_BLR",
-      "RSK_GAP_PROD_001_WH_BLR",
-      "RSK_SHIPMENT_SHP_7001"
-    ],
-    "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
-    "validated_at": null,
-    "converted_at": "2026-09-06T19:18:06.027442+00:00",
-    "associated_disruption_id": "DISR_AUTO_DEMAND_PROD_001_WH_BLR",
-    "dismissal_reason": null
-  },
-  "RSK_INVENTORY_PROD_003_WH_BLR": {
-    "risk_id": "RSK_INVENTORY_PROD_003_WH_BLR",
-    "risk_type": "INVENTORY_DEPLETION_RISK",
-    "severity": "CRITICAL",
-    "status": "CONVERTED_TO_DISRUPTION",
-    "source": "DATA_ANALYSIS",
-    "title": "Stockout Risk: Neural Accelerator Module Tensor-X (0.0 Days of Supply at Bangalore Central Fulfillment Hub)",
-    "description": "Projected inventory stockout in 0.0 days for Neural Accelerator Module Tensor-X at Bangalore Central Fulfillment Hub.",
-    "product_id": "PROD_003",
-    "product_name": "Neural Accelerator Module Tensor-X",
-    "warehouse_id": "WH_BLR",
-    "warehouse_name": "Bangalore Central Fulfillment Hub",
-    "supplier_id": null,
-    "supplier_name": null,
-    "metric": "days_of_supply",
-    "metric_value": 0.0,
-    "threshold": 5.0,
-    "confidence": 0.96,
-    "estimated_revenue_at_risk": 5800000.0,
-    "orders_affected_count": 24,
-    "days_to_impact": 0.0,
-    "evidence": {
-      "metric_name": "days_of_supply",
-      "observed_value": 0.0,
-      "baseline_value": 8.0,
-      "threshold_value": 5.0,
-      "unit": "days",
-      "summary": "Neural Accelerator Module Tensor-X at Bangalore Central Fulfillment Hub has only 0.0 days of supply remaining (20 available units vs 5.0 units/day burn rate).",
-      "drivers": [
-        "Current available inventory: 20 units (Safety buffer: 30 units).",
-        "Reserved demand: 120 units with burn rate of 5.0 units/day.",
-        "Projected stockout in approximately 0.0 days if replenishment is not expedited.",
-        "Incoming in-transit supply: 10 units."
-      ],
-      "raw_details": {
-        "available_quantity": 20.0,
-        "reserved_quantity": 120.0,
-        "safety_stock": 30.0,
-        "in_transit_quantity": 10.0,
-        "daily_demand": 5.0,
-        "days_of_supply": 0.0
-      }
-    },
-    "correlated_risk_ids": [],
-    "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
-    "validated_at": null,
-    "converted_at": "2026-09-06T19:13:05.325442+00:00",
-    "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_003_WH_BLR",
     "dismissal_reason": null
   },
   "RSK_INVENTORY_PROD_001_WH_BLR": {
@@ -291,7 +278,7 @@
     "warehouse_name": "Bangalore Central Fulfillment Hub",
     "supplier_id": null,
     "supplier_name": null,
-    "metric": "days_of_supply",
+    "metric": "anomaly_score",
     "metric_value": 0.0,
     "threshold": 5.0,
     "confidence": 0.98,
@@ -321,13 +308,9 @@
         "days_of_supply": 0.0
       }
     },
-    "correlated_risk_ids": [
-      "RSK_DEMAND_PROD_001_WH_BLR",
-      "RSK_GAP_PROD_001_WH_BLR",
-      "RSK_SHIPMENT_SHP_7001"
-    ],
+    "correlated_risk_ids": [],
     "validation_score": 0.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": "2026-09-06T19:09:59.870234+00:00",
     "associated_disruption_id": "DISR_AUTO_INVENTORY_PROD_001_WH_BLR",
@@ -381,7 +364,7 @@
       "RSK_GAP_PROD_002_WH_BLR"
     ],
     "validation_score": 85.0,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -442,7 +425,7 @@
       "RSK_SHIPMENT_SHP_7001"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -501,7 +484,7 @@
       "RSK_INVENTORY_PROD_002_WH_BLR"
     ],
     "validation_score": 89.2,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -559,7 +542,7 @@
       "RSK_GAP_PROD_001_WH_BLR"
     ],
     "validation_score": 99.2,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -610,7 +593,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 59.2,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.741755+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,
@@ -662,7 +645,7 @@
     },
     "correlated_risk_ids": [],
     "validation_score": 50.4,
-    "detected_at": "2026-09-09T18:30:17.958886+00:00",
+    "detected_at": "2026-09-09T19:02:19.742789+00:00",
     "validated_at": null,
     "converted_at": null,
     "associated_disruption_id": null,

@@ -75,9 +75,8 @@ class RiskDetectionEngine:
         existing_disruptions = dataset.get("disruptions", [])
         validated_signals, audit_logs = RiskValidator.validate_signals(raw_signals, existing_disruptions)
         
-        # 3. Save signals and audit logs to repository
-        for s in validated_signals:
-            RiskRepository.save_risk(s)
+        # 3. Save signals and audit logs to repository (Bulk high-speed save + async BigQuery sync)
+        RiskRepository.save_all_risks(validated_signals, sync_bq=True)
             
         for a in audit_logs:
             RiskRepository.add_audit(a)

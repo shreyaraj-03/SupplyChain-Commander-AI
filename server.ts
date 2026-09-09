@@ -16,9 +16,38 @@ const investigationsStore: Record<string, any> = {};
 
 function getPythonBin(): string {
   if (process.env.PYTHON_BIN) {
-    return process.env.PYTHON_BIN;
+    const p = process.env.PYTHON_BIN.replace(/^["']|["']$/g, '');
+    if (fs.existsSync(p)) return p;
   }
+  const defaultWinPath = 'C:\\Users\\Shreya Raj\\AppData\\Local\\Programs\\Python\\Python39\\python.exe';
+  if (process.platform === 'win32' && fs.existsSync(defaultWinPath)) {
+    return defaultWinPath;
+  }
+  const venvWin = path.join(process.cwd(), 'venv', 'Scripts', 'python.exe');
+  if (fs.existsSync(venvWin)) return venvWin;
+  const dotVenvWin = path.join(process.cwd(), '.venv', 'Scripts', 'python.exe');
+  if (fs.existsSync(dotVenvWin)) return dotVenvWin;
+
   return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+function safeParseJson(raw: string): any {
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch (err) {
+    const firstBrace = trimmed.indexOf('{');
+    const lastBrace = trimmed.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      return JSON.parse(trimmed.substring(firstBrace, lastBrace + 1));
+    }
+    const firstBracket = trimmed.indexOf('[');
+    const lastBracket = trimmed.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+      return JSON.parse(trimmed.substring(firstBracket, lastBracket + 1));
+    }
+    throw err;
+  }
 }
 
 function runPythonRiskDetection(inputPayload: any): Promise<any> {
@@ -42,15 +71,15 @@ function runPythonRiskDetection(inputPayload: any): Promise<any> {
     });
 
     py.on('close', (code) => {
-      if (code !== 0) {
+      if (code !== 0 && !stdout.trim()) {
         console.error('Python risk detection runner error:', stderr);
         return reject(new Error(`Python process exited with code ${code}: ${stderr}`));
       }
       try {
-        const result = JSON.parse(stdout);
+        const result = safeParseJson(stdout);
         resolve(result);
       } catch (err) {
-        reject(new Error(`Failed to parse Python risk detection output: ${stdout}`));
+        reject(new Error(`Failed to parse Python risk detection output: ${stdout || stderr}`));
       }
     });
   });
@@ -92,17 +121,17 @@ function runPythonInvestigation(disruptionId: string, weights?: Record<string, n
     });
 
     py.on('close', (code) => {
-      if (code !== 0) {
+      if (code !== 0 && !stdout.trim()) {
         console.error(`Python runner error (code ${code}):`, stderr);
         return reject(new Error(`Python process exited with code ${code}: ${stderr}`));
       }
 
       try {
-        const result = JSON.parse(stdout);
+        const result = safeParseJson(stdout);
         investigationsStore[cacheKey] = result;
         resolve(result);
       } catch (err) {
-        reject(new Error(`Failed to parse Python agent output: ${stdout}`));
+        reject(new Error(`Failed to parse Python agent output: ${stdout || stderr}`));
       }
     });
   });

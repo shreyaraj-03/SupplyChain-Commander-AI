@@ -9,6 +9,9 @@ import os
 import json
 from dotenv import load_dotenv
 
+import warnings
+warnings.filterwarnings("ignore")
+
 # Ensure environment variables are loaded
 load_dotenv()
 
