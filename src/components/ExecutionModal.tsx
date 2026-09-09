@@ -12,22 +12,26 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { RecoveryStrategy, Disruption } from '../types/supplyChain.ts';
+import { recordMitigationExecution } from '../services/api.ts';
 
 interface ExecutionModalProps {
   isOpen: boolean;
   onClose: () => void;
   strategy: RecoveryStrategy;
   disruption: Disruption;
+  onExecutionComplete?: (execution: any) => void;
 }
 
 export const ExecutionModal: React.FC<ExecutionModalProps> = ({
   isOpen,
   onClose,
   strategy,
-  disruption
+  disruption,
+  onExecutionComplete
 }) => {
   const [step, setStep] = useState<number>(0);
   const [isExecuting, setIsExecuting] = useState<boolean>(true);
+  const [isPersisted, setIsPersisted] = useState<boolean>(false);
 
   const executionSteps = [
     {
@@ -56,16 +60,38 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
     if (!isOpen) {
       setStep(0);
       setIsExecuting(true);
+      setIsPersisted(false);
       return;
     }
 
-    const timer1 = setTimeout(() => setStep(1), 600);
-    const timer2 = setTimeout(() => setStep(2), 1400);
-    const timer3 = setTimeout(() => setStep(3), 2200);
-    const timer4 = setTimeout(() => {
+    const timer1 = setTimeout(() => setStep(1), 500);
+    const timer2 = setTimeout(() => setStep(2), 1200);
+    const timer3 = setTimeout(() => setStep(3), 1900);
+    const timer4 = setTimeout(async () => {
       setStep(4);
       setIsExecuting(false);
-    }, 3000);
+
+      // Persist mitigation authorization to backend DB
+      try {
+        const executionPayload = {
+          execution_id: `EXEC_${disruption.disruption_id.replace('DISR_', '')}_${Date.now()}`,
+          disruption_id: disruption.disruption_id,
+          strategy_id: strategy.strategy_id,
+          strategy_name: strategy.strategy_name,
+          authorized_budget: strategy.total_cost,
+          executed_at: new Date().toISOString(),
+          status: 'SUCCESS',
+          steps: executionSteps
+        };
+        const res = await recordMitigationExecution(executionPayload);
+        setIsPersisted(true);
+        if (onExecutionComplete) {
+          onExecutionComplete(res.execution || executionPayload);
+        }
+      } catch (err) {
+        console.error('Failed to persist mitigation execution to DB:', err);
+      }
+    }, 2600);
 
     return () => {
       clearTimeout(timer1);
@@ -73,7 +99,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
       clearTimeout(timer3);
       clearTimeout(timer4);
     };
-  }, [isOpen]);
+  }, [isOpen, disruption.disruption_id, strategy.strategy_id]);
 
   if (!isOpen) return null;
 

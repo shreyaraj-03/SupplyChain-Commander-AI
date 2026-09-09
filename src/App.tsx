@@ -5,13 +5,15 @@ import {
   runRiskDetectionScan,
   convertRiskToDisruption,
   triggerInvestigation,
-  runSimulation
+  runSimulation,
+  fetchMitigationExecutions
 } from './services/api.ts';
 import {
   Disruption,
   Investigation,
   StrategyScoreWeights,
-  RiskSignal
+  RiskSignal,
+  MitigationExecution
 } from './types/supplyChain.ts';
 import { Navbar, ActivePerspective } from './components/Navbar.tsx';
 import { DisruptionSelector } from './components/DisruptionSelector.tsx';
@@ -31,6 +33,7 @@ import {
 export default function App() {
   const [disruptions, setDisruptions] = useState<Disruption[]>([]);
   const [risks, setRisks] = useState<RiskSignal[]>([]);
+  const [executions, setExecutions] = useState<MitigationExecution[]>([]);
   const [selectedDisruption, setSelectedDisruption] = useState<Disruption | null>(null);
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
@@ -56,17 +59,19 @@ export default function App() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Load disruptions and AI detected risks
+  // Load disruptions, AI detected risks, and logged executions
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
       setError(null);
-      const [disrData, riskData] = await Promise.all([
+      const [disrData, riskData, execData] = await Promise.all([
         fetchDisruptions(),
-        fetchRisks().catch(() => [])
+        fetchRisks().catch(() => []),
+        fetchMitigationExecutions().catch(() => [])
       ]);
       setDisruptions(disrData);
       setRisks(riskData);
+      setExecutions(execData);
 
       setSelectedDisruption((prev) => {
         if (!prev && disrData.length > 0) {
@@ -240,9 +245,30 @@ export default function App() {
     }
   };
 
+  // Handle mitigation execution completion
+  const handleExecutionComplete = (newExec: MitigationExecution) => {
+    setExecutions((prev) => [newExec, ...prev.filter((e) => e.disruption_id !== newExec.disruption_id)]);
+    setDisruptions((prev) =>
+      prev.map((d) => (d.disruption_id === newExec.disruption_id ? { ...d, status: 'IN_EXECUTION' as const } : d))
+    );
+    setSelectedDisruption((prev) =>
+      prev && prev.disruption_id === newExec.disruption_id ? { ...prev, status: 'IN_EXECUTION' as const } : prev
+    );
+  };
+
   const topStrategy = investigation?.strategies && investigation.strategies.length > 0
     ? investigation.strategies.find((s) => s.strategy_id === investigation.recommended_strategy_id) || investigation.strategies[0]
     : null;
+
+  const isSelectedDisruptionExecuted = selectedDisruption
+    ? selectedDisruption.status === 'IN_EXECUTION' ||
+      selectedDisruption.status === 'MITIGATED' ||
+      executions.some((e) => e.disruption_id === selectedDisruption.disruption_id)
+    : false;
+
+  const currentExecutionRecord = selectedDisruption
+    ? executions.find((e) => e.disruption_id === selectedDisruption.disruption_id)
+    : undefined;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
@@ -282,6 +308,11 @@ export default function App() {
               onSelect={handleSelectDisruption}
               onInvestigate={(id) => runAgentInvestigation(id)}
               isInvestigating={isInvestigating}
+              executions={executions}
+              onOpenExecutionLogs={(disr) => {
+                setSelectedDisruption(disr);
+                setIsExecutionModalOpen(true);
+              }}
             />
 
             {/* Impact & Blast Radius Analytics */}
@@ -316,6 +347,8 @@ export default function App() {
                 explanation={investigation.explanation}
                 recommendedStrategy={topStrategy}
                 onExecuteMitigation={() => setIsExecutionModalOpen(true)}
+                isExecuted={isSelectedDisruptionExecuted}
+                executionRecord={currentExecutionRecord}
               />
             )}
           </div>
@@ -365,6 +398,7 @@ export default function App() {
           onClose={() => setIsExecutionModalOpen(false)}
           strategy={topStrategy}
           disruption={selectedDisruption}
+          onExecutionComplete={handleExecutionComplete}
         />
       )}
 

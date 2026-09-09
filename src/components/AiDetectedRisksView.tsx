@@ -63,7 +63,14 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Filtering logic
+  // Filtering & Sorting logic (Converted risks positioned towards the bottom)
+  const severityRank: Record<string, number> = {
+    CRITICAL: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1
+  };
+
   const filteredRisks = risks.filter((r) => {
     if (selectedType !== 'ALL' && r.risk_type !== selectedType) return false;
     if (selectedSeverity !== 'ALL' && r.severity !== selectedSeverity) return false;
@@ -73,10 +80,26 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
       const matchProduct = r.product_name?.toLowerCase().includes(q) || r.product_id?.toLowerCase().includes(q);
       const matchWarehouse = r.warehouse_name?.toLowerCase().includes(q) || r.warehouse_id?.toLowerCase().includes(q);
       const matchSupplier = r.supplier_name?.toLowerCase().includes(q) || r.supplier_id?.toLowerCase().includes(q);
-      const matchTitle = r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
+      const matchTitle = r.title?.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q);
       if (!matchProduct && !matchWarehouse && !matchSupplier && !matchTitle) return false;
     }
     return true;
+  });
+
+  const displayRisks = [...filteredRisks].sort((a, b) => {
+    const aConverted = a.status === 'CONVERTED_TO_DISRUPTION' ? 1 : 0;
+    const bConverted = b.status === 'CONVERTED_TO_DISRUPTION' ? 1 : 0;
+
+    if (aConverted !== bConverted) {
+      return aConverted - bConverted; // Unconverted (0) before Converted (1)
+    }
+
+    const sevDiff = (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+    if (sevDiff !== 0) return sevDiff;
+
+    const timeA = a.detected_at ? new Date(a.detected_at).getTime() : 0;
+    const timeB = b.detected_at ? new Date(b.detected_at).getTime() : 0;
+    return timeB - timeA;
   });
 
   const criticalCount = risks.filter((r) => r.severity === 'CRITICAL').length;
@@ -238,7 +261,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
       </div>
 
       {/* Risks Grid */}
-      {filteredRisks.length === 0 ? (
+      {displayRisks.length === 0 ? (
         <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
           <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
           <h3 className="font-bold text-slate-700 text-sm">No Risk Signals Found</h3>
@@ -248,7 +271,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filteredRisks.map((risk) => {
+          {displayRisks.map((risk) => {
             const isConverted = risk.status === 'CONVERTED_TO_DISRUPTION';
             const isConvertingThis = isConvertingId === risk.risk_id;
 

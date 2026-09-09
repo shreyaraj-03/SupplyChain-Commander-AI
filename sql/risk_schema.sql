@@ -45,7 +45,19 @@ CREATE TABLE IF NOT EXISTS `supply_chain_analytics.dynamic_disruptions` (
   evidence_json STRING
 );
 
--- 3. SQLite DDL for local persistent database (backend/data/supplychain_commander.db)
+-- 3. BigQuery mitigation_executions table schema
+CREATE TABLE IF NOT EXISTS `supply_chain_analytics.mitigation_executions` (
+  execution_id STRING NOT NULL,
+  disruption_id STRING NOT NULL,
+  strategy_id STRING NOT NULL,
+  strategy_name STRING NOT NULL,
+  authorized_budget FLOAT64 NOT NULL,
+  executed_at TIMESTAMP NOT NULL,
+  status STRING NOT NULL,
+  execution_steps_json STRING NOT NULL
+);
+
+-- 4. SQLite DDL for local persistent database (backend/data/supplychain_commander.db)
 CREATE TABLE IF NOT EXISTS detected_risks (
   risk_id TEXT PRIMARY KEY,
   risk_type TEXT NOT NULL,
@@ -86,4 +98,15 @@ CREATE TABLE IF NOT EXISTS dynamic_disruptions (
   detected_at TEXT,
   validated_at TEXT,
   evidence_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS mitigation_executions (
+  execution_id TEXT PRIMARY KEY,
+  disruption_id TEXT NOT NULL,
+  strategy_id TEXT NOT NULL,
+  strategy_name TEXT NOT NULL,
+  authorized_budget REAL NOT NULL,
+  executed_at TEXT NOT NULL,
+  status TEXT NOT NULL,
+  execution_steps_json TEXT NOT NULL
 );

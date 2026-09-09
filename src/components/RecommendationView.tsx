@@ -19,34 +19,58 @@ interface RecommendationViewProps {
   explanation: ExplanationResult;
   recommendedStrategy: RecoveryStrategy;
   onExecuteMitigation?: () => void;
+  isExecuted?: boolean;
+  executionRecord?: any;
 }
 
 export const RecommendationView: React.FC<RecommendationViewProps> = ({
   explanation,
   recommendedStrategy,
-  onExecuteMitigation
+  onExecuteMitigation,
+  isExecuted = false,
+  executionRecord
 }) => {
   const [showAuditTree, setShowAuditTree] = useState(true);
 
   return (
     <div className="space-y-6 mb-8" id="ai-recommendation-hub">
       {/* 1. Executive AI Recommendation Card */}
-      <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900 p-6 text-white shadow-xl">
+      <div className={`rounded-xl border p-6 text-white shadow-xl transition-all ${
+        isExecuted
+          ? 'border-emerald-500 bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 ring-2 ring-emerald-500/30'
+          : 'border-emerald-500/40 bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900'
+      }`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-inner">
-              <Sparkles className="w-6 h-6" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shadow-inner ${
+              isExecuted
+                ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-emerald-500/50'
+                : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400'
+            }`}>
+              {isExecuted ? <CheckCircle2 className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-extrabold px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950">
-                  AI Autonomous Decision
-                </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {isExecuted ? (
+                  <span className="text-xs uppercase font-black px-2.5 py-0.5 rounded bg-emerald-400 text-slate-950 flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+                    Solution Accepted & In Execution
+                  </span>
+                ) : (
+                  <span className="text-xs uppercase font-extrabold px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950">
+                    AI Autonomous Decision
+                  </span>
+                )}
                 <span className="text-xs text-slate-400 font-mono">
                   Strategy ID: {recommendedStrategy.strategy_id}
                 </span>
+                {executionRecord?.execution_id && (
+                  <span className="text-[11px] text-emerald-300 font-mono bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-700/60">
+                    ID: {executionRecord.execution_id}
+                  </span>
+                )}
               </div>
-              <h2 className="text-xl font-bold text-white mt-1">
+              <h2 className="text-xl font-bold text-white mt-1 flex items-center gap-2">
                 {recommendedStrategy.strategy_name}
               </h2>
             </div>
@@ -59,6 +83,34 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             <div className="text-[11px] text-slate-400">Composite Ranking Index</div>
           </div>
         </div>
+
+        {/* Live Execution Dispatch Badge Banner if in execution */}
+        {isExecuted && (
+          <div className="mb-4 p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              <div>
+                <div className="font-bold text-emerald-300 text-sm">
+                  Autonomous Multi-System Mitigation Active & Dispatched
+                </div>
+                <div className="text-slate-300 text-[11px] mt-0.5">
+                  Inter-facility transfers sequenced • Expedited PO sent via EDI • Customer SLA priority re-allocated.
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-emerald-500/40 text-[10px] font-mono text-emerald-300">
+                SAP ERP: APPROVED
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-emerald-500/40 text-[10px] font-mono text-emerald-300">
+                WMS: ROUTED
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-emerald-500/40 text-[10px] font-mono text-emerald-300">
+                EDI: DISPATCHED
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Executive Summary */}
         <p className="text-sm text-slate-200 leading-relaxed mb-6 bg-slate-800/60 p-4 rounded-xl border border-slate-700/60">
@@ -138,21 +190,27 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-xl">
             <div>
               <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                Ready for Autonomous Execution
+                <ShieldCheck className={`w-4 h-4 ${isExecuted ? 'text-emerald-400' : 'text-emerald-400'}`} />
+                {isExecuted ? 'Mitigation Authorization Confirmed' : 'Ready for Autonomous Execution'}
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">
-                Will dispatch inter-facility transfer orders & generate supplier purchase orders automatically.
+                {isExecuted
+                  ? 'All dispatch API calls executed and recorded in database. Click to review live telemetry logs.'
+                  : 'Will dispatch inter-facility transfer orders & generate supplier purchase orders automatically.'}
               </div>
             </div>
 
             <button
               id="authorize-mitigation-btn"
               onClick={onExecuteMitigation}
-              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg hover:shadow-emerald-500/20 transition transform active:scale-95"
+              className={`px-5 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-2 shadow-lg transition transform active:scale-95 ${
+                isExecuted
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 hover:shadow-emerald-500/20'
+              }`}
             >
-              <Send className="w-4 h-4" />
-              <span>Authorize & Execute Mitigation</span>
+              {isExecuted ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+              <span>{isExecuted ? 'View Dispatch Telemetry & Logs' : 'Authorize & Execute Mitigation'}</span>
             </button>
           </div>
         )}

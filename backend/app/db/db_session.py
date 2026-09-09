@@ -100,6 +100,19 @@ def init_db():
     );
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS mitigation_executions (
+        execution_id TEXT PRIMARY KEY,
+        disruption_id TEXT NOT NULL,
+        strategy_id TEXT NOT NULL,
+        strategy_name TEXT NOT NULL,
+        authorized_budget REAL NOT NULL,
+        executed_at TEXT NOT NULL,
+        status TEXT NOT NULL,
+        execution_steps_json TEXT NOT NULL
+    );
+    """)
+
     conn.commit()
     conn.close()
 

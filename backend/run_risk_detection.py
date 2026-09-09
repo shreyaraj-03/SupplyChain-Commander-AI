@@ -7,6 +7,10 @@ Provides JSON IPC interface for Node ingress and automated schedulers.
 import sys
 import os
 import json
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded
+load_dotenv()
 
 # Ensure repository root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -66,6 +70,20 @@ def main():
                 print(json.dumps({"success": False, "error": f"Risk {risk_id} not found"}))
                 return
             print(json.dumps({"success": True, "disruption": disruption}))
+
+        elif action == "save_execution":
+            exec_payload = input_data.get("execution", {})
+            saved = RiskRepository.save_mitigation_execution(exec_payload)
+            print(json.dumps({"success": True, "execution": saved}))
+
+        elif action == "list_executions":
+            disruption_id = input_data.get("disruption_id")
+            execs = RiskRepository.list_mitigation_executions(disruption_id=disruption_id)
+            print(json.dumps({"success": True, "count": len(execs), "executions": execs}))
+            
+        elif action == "sync_bigquery":
+            sync_res = RiskRepository.sync_all_to_bigquery()
+            print(json.dumps({"success": True, "sync": sync_res}))
             
         else:
             print(json.dumps({"success": False, "error": f"Unknown action {action}"}))

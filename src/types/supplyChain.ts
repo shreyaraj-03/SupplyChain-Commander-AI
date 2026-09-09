@@ -1,8 +1,27 @@
 export type DisruptionSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type DisruptionType = 'SUPPLIER_DELAY' | 'INVENTORY_SHORTAGE' | 'DEMAND_SPIKE' | 'FACILITY_CLOSURE';
-export type DisruptionStatus = 'ACTIVE' | 'INVESTIGATING' | 'RESOLVED' | 'MITIGATED';
+export type DisruptionStatus = 'ACTIVE' | 'INVESTIGATING' | 'RESOLVED' | 'MITIGATED' | 'IN_EXECUTION';
 export type OrderPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'STANDARD';
 export type AgentStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+
+export interface MitigationExecutionStep {
+  title: string;
+  desc: string;
+  system: string;
+  status?: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  timestamp?: string;
+}
+
+export interface MitigationExecution {
+  execution_id: string;
+  disruption_id: string;
+  strategy_id: string;
+  strategy_name: string;
+  authorized_budget: number;
+  executed_at: string;
+  status: 'IN_EXECUTION' | 'SUCCESS' | 'ACTIVE' | 'DISPATCHED' | 'FAILED';
+  steps: MitigationExecutionStep[];
+}
 
 export interface Product {
   product_id: string;

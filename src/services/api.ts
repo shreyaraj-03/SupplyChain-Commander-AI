@@ -97,3 +97,25 @@ export async function convertRiskToDisruption(riskId: string): Promise<any> {
   return await res.json();
 }
 
+export async function recordMitigationExecution(executionData: any): Promise<any> {
+  const res = await fetch('/api/executions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(executionData)
+  });
+  if (!res.ok) {
+    throw new Error('Failed to record mitigation execution');
+  }
+  return await res.json();
+}
+
+export async function fetchMitigationExecutions(disruptionId?: string): Promise<any[]> {
+  const query = disruptionId ? `?disruption_id=${encodeURIComponent(disruptionId)}` : '';
+  const res = await fetch(`/api/executions${query}`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch mitigation executions');
+  }
+  const data = await res.json();
+  return data.executions || [];
+}
+

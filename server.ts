@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -24,7 +25,9 @@ function runPythonRiskDetection(inputPayload: any): Promise<any> {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(process.cwd(), 'backend', 'run_risk_detection.py');
     const pythonBin = getPythonBin();
-    const py = spawn(pythonBin, [scriptPath, JSON.stringify(inputPayload)]);
+    const py = spawn(pythonBin, [scriptPath]);
+    
+    py.stdin.write(JSON.stringify(inputPayload));
     py.stdin.end();
 
     let stdout = '';
@@ -236,6 +239,56 @@ function prewarmActiveDisruptions(list: any[]) {
       res.json(result);
     } catch (err: any) {
       console.error('Risk conversion error:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Manual Trigger: BigQuery Synchronizer / Backfill
+  app.post('/api/bigquery/sync', async (req, res) => {
+    try {
+      const result = await runPythonRiskDetection({
+        action: 'sync_bigquery'
+      });
+      res.json(result);
+    } catch (err: any) {
+      console.error('BigQuery sync error:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Record Executive Mitigation Dispatch Execution in Database
+  app.post('/api/executions', async (req, res) => {
+    try {
+      const result = await runPythonRiskDetection({
+        action: 'save_execution',
+        execution: req.body
+      });
+
+      // Update in-memory static disruptions status
+      if (req.body && req.body.disruption_id) {
+        const found = disruptions.find((d) => d.disruption_id === req.body.disruption_id);
+        if (found) {
+          found.status = 'IN_EXECUTION';
+        }
+      }
+
+      res.json(result);
+    } catch (err: any) {
+      console.error('Execution logging error:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Fetch Logged Mitigation Executions
+  app.get('/api/executions', async (req, res) => {
+    try {
+      const { disruption_id } = req.query;
+      const result = await runPythonRiskDetection({
+        action: 'list_executions',
+        disruption_id: disruption_id as string
+      });
+      res.json(result);
+    } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
   });

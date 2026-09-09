@@ -7,6 +7,10 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import json
 import os
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded
+load_dotenv()
 
 from backend.app.db.db_session import get_db_connection
 from backend.app.risk_detection.risk_models import (
@@ -252,6 +256,14 @@ class RiskRepository:
         conn.commit()
         conn.close()
         cls._persist_disruption_to_disk(disruption)
+
+        # Stream sync to BigQuery if configured
+        try:
+            from backend.scripts.seed_bigquery import sync_dynamic_disruption_to_bigquery
+            sync_dynamic_disruption_to_bigquery(disruption)
+        except Exception:
+            pass
+
         return disruption
 
     @classmethod
@@ -353,6 +365,14 @@ class RiskRepository:
         conn.commit()
         conn.close()
         cls._persist_risk_to_disk(risk.to_dict())
+
+        # Stream sync to BigQuery if configured
+        try:
+            from backend.scripts.seed_bigquery import sync_detected_risk_to_bigquery
+            sync_detected_risk_to_bigquery(risk.to_dict())
+        except Exception:
+            pass
+
         return risk
 
     @classmethod
@@ -541,17 +561,130 @@ class RiskRepository:
         return risk
 
     @classmethod
-    def clear(cls):
-        cls._risks_store.clear()
-        cls._runs_store.clear()
-        cls._audit_logs.clear()
-        cls._active_disruptions_cache.clear()
+    def save_mitigation_execution(cls, execution: Dict[str, Any]) -> Dict[str, Any]:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM dynamic_disruptions")
-        cursor.execute("DELETE FROM detected_risks")
+        exec_id = execution.get("execution_id") or f"EXEC_{int(datetime.now(timezone.utc).timestamp())}"
+        execution["execution_id"] = exec_id
+        
+        cursor.execute("""
+        INSERT OR REPLACE INTO mitigation_executions (
+            execution_id, disruption_id, strategy_id, strategy_name,
+            authorized_budget, executed_at, status, execution_steps_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            exec_id,
+            execution.get("disruption_id", ""),
+            execution.get("strategy_id", ""),
+            execution.get("strategy_name", ""),
+            float(execution.get("authorized_budget", 0.0)),
+            execution.get("executed_at") or datetime.now(timezone.utc).isoformat(),
+            execution.get("status", "SUCCESS"),
+            json.dumps(execution.get("steps", []))
+        ))
+        # If linked to a disruption, update disruption status to IN_EXECUTION
+        disr_id = execution.get("disruption_id")
+        if disr_id:
+            cursor.execute("UPDATE dynamic_disruptions SET status = 'IN_EXECUTION' WHERE disruption_id = ?", (disr_id,))
+            if disr_id in cls._active_disruptions_cache:
+                cls._active_disruptions_cache[disr_id]["status"] = "IN_EXECUTION"
+            
+            # Also update dynamic_disruptions.json on disk if present
+            try:
+                data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+                dyn_path = os.path.join(data_dir, "dynamic_disruptions.json")
+                if os.path.exists(dyn_path):
+                    with open(dyn_path, "r", encoding="utf-8") as f:
+                        dyn_data = json.load(f)
+                    if disr_id in dyn_data:
+                        dyn_data[disr_id]["status"] = "IN_EXECUTION"
+                        with open(dyn_path, "w", encoding="utf-8") as f:
+                            json.dump(dyn_data, f, indent=2)
+            except Exception:
+                pass
+
         conn.commit()
         conn.close()
+
+        # Persist execution log to disk JSON
+        try:
+            data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+            os.makedirs(data_dir, exist_ok=True)
+            exec_path = os.path.join(data_dir, "mitigation_executions.json")
+            data = {}
+            if os.path.exists(exec_path):
+                try:
+                    with open(exec_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {}
+            data[exec_id] = execution
+            with open(exec_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+        # Sync to Google BigQuery if project/credentials are active
+        try:
+            from backend.scripts.seed_bigquery import sync_mitigation_execution_to_bigquery
+            sync_mitigation_execution_to_bigquery(execution)
+        except Exception:
+            pass
+
+        return execution
+
+    @classmethod
+    def list_mitigation_executions(cls, disruption_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        if disruption_id:
+            cursor.execute("SELECT * FROM mitigation_executions WHERE disruption_id = ? ORDER BY executed_at DESC", (disruption_id,))
+        else:
+            cursor.execute("SELECT * FROM mitigation_executions ORDER BY executed_at DESC")
+        rows = cursor.fetchall()
+        conn.close()
+
+        results = []
+        for row in rows:
+            d = dict(row)
+            if d.get("execution_steps_json"):
+                try:
+                    d["steps"] = json.loads(d["execution_steps_json"])
+                except Exception:
+                    pass
+            results.append(d)
+        return results
+
+    @classmethod
+    def sync_all_to_bigquery(cls) -> Dict[str, Any]:
+        """Backfill / synchronize all stored risks, dynamic disruptions, and mitigation executions to BigQuery."""
+        results = {"risks": 0, "disruptions": 0, "executions": 0, "errors": []}
+        try:
+            from backend.scripts.seed_bigquery import (
+                sync_batch_risks_to_bigquery,
+                sync_dynamic_disruption_to_bigquery,
+                sync_mitigation_execution_to_bigquery
+            )
+            # Sync risks
+            risks = cls.list_risks()
+            if risks:
+                sync_batch_risks_to_bigquery(risks)
+                results["risks"] = len(risks)
+
+            # Sync disruptions
+            disruptions = cls.list_dynamic_disruptions()
+            for d in disruptions:
+                sync_dynamic_disruption_to_bigquery(d)
+            results["disruptions"] = len(disruptions)
+
+            # Sync executions
+            executions = cls.list_mitigation_executions()
+            for e in executions:
+                sync_mitigation_execution_to_bigquery(e)
+            results["executions"] = len(executions)
+        except Exception as err:
+            results["errors"].append(str(err))
+        return results
 
 # Perform initial legacy migration on module load
 RiskRepository._migrate_legacy_json_to_db()
