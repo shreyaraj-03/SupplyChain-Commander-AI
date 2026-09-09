@@ -107,6 +107,10 @@ export interface Disruption {
   scenario_tag: string;
   affected_product_id: string;
   destination_warehouse_id: string;
+  source?: 'STATIC' | 'DATA_DETECTED' | string;
+  detection_evidence?: RiskEvidence;
+  revenue_at_risk?: number;
+  orders_affected_count?: number;
 }
 
 export interface SupplierPerformance {
@@ -200,6 +204,13 @@ export interface RecoveryStrategy {
   feasibility_score: number; // 0-100 (higher is better)
   score_breakdown?: StrategyScoreBreakdown;
   final_score?: number; // 0-100
+  business_rationale?: string;
+  approach_summary?: string;
+  commercial_impact?: string;
+  roi_multiplier?: number;
+  pros?: string[];
+  cons?: string[];
+  risk_mitigation_safeguards?: string[];
 }
 
 export interface StrategyScoreWeights {
