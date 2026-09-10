@@ -1,32 +1,29 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { spawn, execSync, spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { disruptions } from './server/data/syntheticData.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-import fs from 'fs';
 
 // In-memory cache of investigations for instant UI responsiveness
 const investigationsStore: Record<string, any> = {};
 
 function getPythonBin(): string {
   if (process.env.PYTHON_BIN) {
-    const p = process.env.PYTHON_BIN.replace(/^["']|["']$/g, '');
-    if (fs.existsSync(p)) return p;
-  }
-  const defaultWinPath = 'C:\\Users\\Shreya Raj\\AppData\\Local\\Programs\\Python\\Python39\\python.exe';
-  if (process.platform === 'win32' && fs.existsSync(defaultWinPath)) {
-    return defaultWinPath;
+    const customPath = process.env.PYTHON_BIN.replace(/^["']|["']$/g, '').trim();
+    if (fs.existsSync(customPath)) return customPath;
+    if (customPath) return customPath;
   }
   const venvWin = path.join(process.cwd(), 'venv', 'Scripts', 'python.exe');
   if (fs.existsSync(venvWin)) return venvWin;
   const dotVenvWin = path.join(process.cwd(), '.venv', 'Scripts', 'python.exe');
   if (fs.existsSync(dotVenvWin)) return dotVenvWin;
+  const venvLinux = path.join(process.cwd(), 'venv', 'bin', 'python3');
+  if (fs.existsSync(venvLinux)) return venvLinux;
+  const dotVenvLinux = path.join(process.cwd(), '.venv', 'bin', 'python3');
+  if (fs.existsSync(dotVenvLinux)) return dotVenvLinux;
 
   return process.platform === 'win32' ? 'python' : 'python3';
 }
@@ -291,6 +288,9 @@ function prewarmActiveDisruptions(list: any[]) {
         action: 'convert_risk',
         risk_id: req.params.id
       });
+      if (result && result.success === false) {
+        return res.status(400).json(result);
+      }
       res.json(result);
     } catch (err: any) {
       console.error('Risk conversion error:', err);
@@ -394,6 +394,16 @@ function prewarmActiveDisruptions(list: any[]) {
     }
   });
 
+  // Health Check Probes for Google Cloud Run / Kubernetes
+  app.get(['/healthz', '/api/health'], (req, res) => {
+    res.status(200).json({
+      status: 'HEALTHY',
+      timestamp: new Date().toISOString(),
+      service: 'SupplyChain Commander AI',
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // Vite middleware for frontend development vs static distribution in production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -409,9 +419,25 @@ function prewarmActiveDisruptions(list: any[]) {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`SupplyChain Commander AI active on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`SupplyChain Commander AI active on port ${PORT} (NODE_ENV=${process.env.NODE_ENV || 'development'})`);
   });
+
+  // Graceful shutdown handling for Cloud Run container scaling / termination
+  const shutdown = (signal: string) => {
+    console.log(`Received ${signal}. Gracefully terminating SupplyChain Commander AI server...`);
+    server.close(() => {
+      console.log('HTTP server closed cleanly.');
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.error('Forcefully terminating after 10s shutdown timeout.');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 startServer().catch((err) => {

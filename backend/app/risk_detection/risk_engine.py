@@ -146,6 +146,20 @@ class RiskDetectionEngine:
         risk = RiskRepository.get_risk(risk_id)
         if not risk:
             return None
+        
+        # Idempotency check: if already converted, ensure consistency and return existing disruption
+        disruption_id = f"DISR_AUTO_{risk.risk_id.replace('RSK_', '')}"
+        existing_disr = RiskRepository.get_disruption(disruption_id)
+        if risk.status == RiskStatus.CONVERTED_TO_DISRUPTION and existing_disr:
+            # Resync to BigQuery to ensure consistency across all tiers
+            try:
+                from backend.scripts.seed_bigquery import sync_detected_risk_to_bigquery, sync_dynamic_disruption_to_bigquery
+                sync_detected_risk_to_bigquery(risk.to_dict())
+                sync_dynamic_disruption_to_bigquery(existing_disr)
+            except Exception:
+                pass
+            return existing_disr
+
         return cls._promote_risk_to_disruption(risk, dataset)
 
     @classmethod
@@ -209,11 +223,11 @@ class RiskDetectionEngine:
             "detection_evidence": risk.evidence.to_dict() if risk.evidence else None
         }
         
-        # Update Risk status
+        # Update Risk status and persist across SQLite, JSON cache, and BigQuery
         risk.status = RiskStatus.CONVERTED_TO_DISRUPTION
         risk.converted_at = now_iso
         risk.associated_disruption_id = disruption_id
-        RiskRepository.save_risk(risk)
+        RiskRepository.save_risk(risk, sync_bq=True)
         RiskRepository.save_disruption(disruption_dict)
         
         # Add audit entry

@@ -49,6 +49,39 @@ const formatCreatedTime = (isoString?: string) => {
   }
 };
 
+function getCleanRiskHeading(risk: RiskSignal): string {
+  const typeLabelMap: Record<string, string> = {
+    INVENTORY_DEPLETION_RISK: 'Stockout Risk',
+    SUPPLY_DEMAND_GAP: 'Supply Deficit',
+    SHIPMENT_DELAY_RISK: 'In-Transit Shipment Delay',
+    SUPPLIER_PERFORMANCE_RISK: 'Supplier Performance Deterioration',
+    WAREHOUSE_CAPACITY_RISK: 'Warehouse Capacity Bottleneck',
+    DEMAND_SPIKE: 'Demand Surge'
+  };
+  const categoryLabel = typeLabelMap[risk.risk_type] || 'Supply Chain Risk';
+
+  if (risk.title && risk.title.trim() && !risk.title.toLowerCase().includes('undefined')) {
+    return risk.title.trim();
+  }
+
+  const targetName = (risk.product_name && risk.product_name !== 'None' ? risk.product_name : null) ||
+                     (risk.supplier_name && risk.supplier_name !== 'None' ? risk.supplier_name : null) ||
+                     (risk.warehouse_name && risk.warehouse_name !== 'None' ? risk.warehouse_name : null) ||
+                     (risk.product_id ? `Product ${risk.product_id}` : null) ||
+                     (risk.supplier_id ? `Supplier ${risk.supplier_id}` : null) ||
+                     (risk.warehouse_id ? `Warehouse ${risk.warehouse_id}` : null);
+
+  const location = risk.warehouse_name && targetName !== risk.warehouse_name && risk.warehouse_name !== 'None'
+    ? ` (${risk.warehouse_name})`
+    : '';
+
+  if (targetName && !targetName.toLowerCase().includes('undefined')) {
+    return `${categoryLabel}: ${targetName}${location}`;
+  }
+
+  return `${categoryLabel} Incident (#${risk.risk_id.replace('RSK_', '')})`;
+}
+
 export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
   risks,
   onScan,
@@ -104,6 +137,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
 
   const criticalCount = risks.filter((r) => r.severity === 'CRITICAL').length;
   const highCount = risks.filter((r) => r.severity === 'HIGH').length;
+  const mediumCount = risks.filter((r) => r.severity === 'MEDIUM').length;
   const convertedCount = risks.filter((r) => r.status === 'CONVERTED_TO_DISRUPTION').length;
   const totalRevenueAtRisk = risks.reduce((sum, r) => sum + (r.estimated_revenue_at_risk || 0), 0);
 
@@ -120,7 +154,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
               <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 AI DETECTED RISKS RADAR
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  Real-Time Early Warning
+                  {risks.length} Real-Time Signals
                 </span>
               </h2>
               <p className="text-xs text-slate-500">
@@ -134,11 +168,21 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
             <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold border border-rose-200 flex items-center gap-1">
               🔴 {criticalCount} Critical
             </span>
-            <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-200 flex items-center gap-1">
-              🟠 {highCount} High
-            </span>
+            {highCount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-200 flex items-center gap-1">
+                🟠 {highCount} High
+              </span>
+            )}
+            {mediumCount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-md bg-yellow-50 text-yellow-800 font-bold border border-yellow-200 flex items-center gap-1">
+                🟡 {mediumCount} Medium
+              </span>
+            )}
             <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
-              ✓ {convertedCount} Incidents
+              ✓ {convertedCount} Converted to Incident
+            </span>
+            <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold border border-slate-200 flex items-center gap-1">
+              📋 {displayRisks.length} of {risks.length} Signals
             </span>
           </div>
         </div>
@@ -222,6 +266,7 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
           >
             <option value="ALL">All Risk Types</option>
             <option value="INVENTORY_DEPLETION_RISK">Inventory Depletion</option>
+            <option value="DEMAND_SPIKE">Demand Surge Spike</option>
             <option value="SUPPLY_DEMAND_GAP">Supply-Demand Gap</option>
             <option value="SHIPMENT_DELAY_RISK">Shipment Transit Delay</option>
             <option value="SUPPLIER_PERFORMANCE_RISK">Supplier Performance</option>
@@ -306,39 +351,6 @@ export const AiDetectedRisksView: React.FC<AiDetectedRisksViewProps> = ({
               WAREHOUSE_CAPACITY_RISK: 'Capacity Bottleneck',
               DEMAND_SPIKE: 'Demand Surge Spike'
             }[risk.risk_type] || risk.risk_type;
-
-function getCleanRiskHeading(risk: RiskSignal): string {
-  const typeLabelMap: Record<string, string> = {
-    INVENTORY_DEPLETION_RISK: 'Stockout Risk',
-    SUPPLY_DEMAND_GAP: 'Supply Deficit',
-    SHIPMENT_DELAY_RISK: 'In-Transit Shipment Delay',
-    SUPPLIER_PERFORMANCE_RISK: 'Supplier Performance Deterioration',
-    WAREHOUSE_CAPACITY_RISK: 'Warehouse Capacity Bottleneck',
-    DEMAND_SPIKE: 'Demand Surge'
-  };
-  const categoryLabel = typeLabelMap[risk.risk_type] || 'Supply Chain Risk';
-
-  if (risk.title && risk.title.trim() && !risk.title.toLowerCase().includes('undefined')) {
-    return risk.title.trim();
-  }
-
-  const targetName = (risk.product_name && risk.product_name !== 'None' ? risk.product_name : null) ||
-                     (risk.supplier_name && risk.supplier_name !== 'None' ? risk.supplier_name : null) ||
-                     (risk.warehouse_name && risk.warehouse_name !== 'None' ? risk.warehouse_name : null) ||
-                     (risk.product_id ? `Product ${risk.product_id}` : null) ||
-                     (risk.supplier_id ? `Supplier ${risk.supplier_id}` : null) ||
-                     (risk.warehouse_id ? `Warehouse ${risk.warehouse_id}` : null);
-
-  const location = risk.warehouse_name && targetName !== risk.warehouse_name && risk.warehouse_name !== 'None'
-    ? ` (${risk.warehouse_name})`
-    : '';
-
-  if (targetName && !targetName.toLowerCase().includes('undefined')) {
-    return `${categoryLabel}: ${targetName}${location}`;
-  }
-
-  return `${categoryLabel} Incident (#${risk.risk_id.replace('RSK_', '')})`;
-}
 
             return (
               <div

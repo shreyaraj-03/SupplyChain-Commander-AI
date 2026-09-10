@@ -257,12 +257,22 @@ class RiskRepository:
         conn.close()
         cls._persist_disruption_to_disk(disruption)
 
-        # Stream sync to BigQuery if configured
+        # Sync to BigQuery — write to BOTH tables so all tiers stay consistent:
+        #   1. dynamic_disruptions (AI-detection metadata)
+        #   2. disruptions         (canonical operational record)
         try:
-            from backend.scripts.seed_bigquery import sync_dynamic_disruption_to_bigquery
-            sync_dynamic_disruption_to_bigquery(disruption)
-        except Exception:
-            pass
+            from backend.scripts.seed_bigquery import (
+                sync_dynamic_disruption_to_bigquery,
+                sync_disruption_to_bigquery,
+            )
+            dyn_ok = sync_dynamic_disruption_to_bigquery(disruption)
+            base_ok = sync_disruption_to_bigquery(disruption)
+            if not dyn_ok or not base_ok:
+                print(f"[RiskRepository] Warning: partial BQ sync for {disr_id} "
+                      f"(dynamic={dyn_ok}, disruptions={base_ok})")
+        except Exception as e:
+            # Log — never silently swallow so we can diagnose in Cloud Logging
+            print(f"[RiskRepository] BigQuery sync error for disruption {disr_id}: {e}")
 
         return disruption
 
@@ -309,7 +319,7 @@ class RiskRepository:
         return results
 
     @classmethod
-    def save_risk(cls, risk: RiskSignal) -> RiskSignal:
+    def save_risk(cls, risk: RiskSignal, sync_bq: bool = False) -> RiskSignal:
         conn = get_db_connection()
         cursor = conn.cursor()
         

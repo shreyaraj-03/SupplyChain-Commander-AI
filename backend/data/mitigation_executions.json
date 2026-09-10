@@ -1,166 +1,42 @@
 {
-  "EXEC_1788794344": {
-    "disruption_id": "DISR_001",
-    "strategy_id": "STRAT_01",
-    "strategy_name": "Reroute Shipment via Air Freight",
-    "authorized_budget": 420000.0,
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Step 1",
-        "desc": "Test dispatch",
-        "system": "SAP"
-      }
-    ],
-    "execution_id": "EXEC_1788794344"
-  },
-  "EXEC_TEST_001": {
-    "execution_id": "EXEC_TEST_001",
-    "disruption_id": "DISR_001",
-    "strategy_id": "REDISTRIBUTE",
-    "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 142000,
-    "executed_at": "2026-09-07T15:58:31.063Z",
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Validating Authorization",
-        "desc": "Allocating budget",
-        "system": "SAP"
-      }
-    ]
-  },
-  "EXEC_003_1788797995072": {
-    "execution_id": "EXEC_003_1788797995072",
-    "disruption_id": "DISR_003",
-    "strategy_id": "REDISTRIBUTE",
-    "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 44000,
-    "executed_at": "2026-09-07T16:19:55.072Z",
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Validating Authorization & Budget Approval",
-        "desc": "Allocating \u00e2\u201a\u00b944,000 mitigation budget.",
-        "system": "SAP ERP Financials"
-      },
-      {
-        "title": "Generating Inter-Facility Transfer Orders",
-        "desc": "Routing surplus inventory from Mumbai and Delhi hubs with expedited freight tags.",
-        "system": "Warehouse Management System (WMS)"
-      },
-      {
-        "title": "Issuing Expedited Supplier Purchase Order",
-        "desc": "Transmitting electronic PO to Delta Dynamics with ISO 9001 quality audit check.",
-        "system": "Procurement EDI Gateway"
-      },
-      {
-        "title": "Re-Sequencing Customer Order Queue",
-        "desc": "Protecting priority enterprise SLA accounts to maintain 0 customer churn.",
-        "system": "Order Management System (OMS)"
-      }
-    ]
-  },
-  "EXEC_003_1788798051856": {
-    "execution_id": "EXEC_003_1788798051856",
-    "disruption_id": "DISR_003",
-    "strategy_id": "REDISTRIBUTE",
-    "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 44000,
-    "executed_at": "2026-09-07T16:20:51.856Z",
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Validating Authorization & Budget Approval",
-        "desc": "Allocating \u00e2\u201a\u00b944,000 mitigation budget.",
-        "system": "SAP ERP Financials"
-      },
-      {
-        "title": "Generating Inter-Facility Transfer Orders",
-        "desc": "Routing surplus inventory from Mumbai and Delhi hubs with expedited freight tags.",
-        "system": "Warehouse Management System (WMS)"
-      },
-      {
-        "title": "Issuing Expedited Supplier Purchase Order",
-        "desc": "Transmitting electronic PO to Delta Dynamics with ISO 9001 quality audit check.",
-        "system": "Procurement EDI Gateway"
-      },
-      {
-        "title": "Re-Sequencing Customer Order Queue",
-        "desc": "Protecting priority enterprise SLA accounts to maintain 0 customer churn.",
-        "system": "Order Management System (OMS)"
-      }
-    ]
-  },
-  "EXEC_003_1788798058591": {
-    "execution_id": "EXEC_003_1788798058591",
-    "disruption_id": "DISR_003",
-    "strategy_id": "REDISTRIBUTE",
-    "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 44000,
-    "executed_at": "2026-09-07T16:20:58.591Z",
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Validating Authorization & Budget Approval",
-        "desc": "Allocating \u00e2\u201a\u00b944,000 mitigation budget.",
-        "system": "SAP ERP Financials"
-      },
-      {
-        "title": "Generating Inter-Facility Transfer Orders",
-        "desc": "Routing surplus inventory from Mumbai and Delhi hubs with expedited freight tags.",
-        "system": "Warehouse Management System (WMS)"
-      },
-      {
-        "title": "Issuing Expedited Supplier Purchase Order",
-        "desc": "Transmitting electronic PO to Delta Dynamics with ISO 9001 quality audit check.",
-        "system": "Procurement EDI Gateway"
-      },
-      {
-        "title": "Re-Sequencing Customer Order Queue",
-        "desc": "Protecting priority enterprise SLA accounts to maintain 0 customer churn.",
-        "system": "Order Management System (OMS)"
-      }
-    ]
-  },
-  "EXEC_003_1788975517996": {
-    "execution_id": "EXEC_003_1788975517996",
-    "disruption_id": "DISR_003",
-    "strategy_id": "REDISTRIBUTE",
-    "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 44000,
-    "executed_at": "2026-09-09T17:38:37.996Z",
-    "status": "SUCCESS",
-    "steps": [
-      {
-        "title": "Validating Authorization & Budget Approval",
-        "desc": "Allocating \u00e2\u201a\u00b944,000 mitigation budget.",
-        "system": "SAP ERP Financials"
-      },
-      {
-        "title": "Generating Inter-Facility Transfer Orders",
-        "desc": "Routing surplus inventory from Mumbai and Delhi hubs with expedited freight tags.",
-        "system": "Warehouse Management System (WMS)"
-      },
-      {
-        "title": "Issuing Expedited Supplier Purchase Order",
-        "desc": "Transmitting electronic PO to Delta Dynamics with ISO 9001 quality audit check.",
-        "system": "Procurement EDI Gateway"
-      },
-      {
-        "title": "Re-Sequencing Customer Order Queue",
-        "desc": "Protecting priority enterprise SLA accounts to maintain 0 customer churn.",
-        "system": "Order Management System (OMS)"
-      }
-    ]
-  },
   "EXEC_003_1788978363925": {
     "execution_id": "EXEC_003_1788978363925",
     "disruption_id": "DISR_003",
     "strategy_id": "REDISTRIBUTE",
     "strategy_name": "Multi-Warehouse Inventory Redistribution",
-    "authorized_budget": 84000,
+    "authorized_budget": 84000.0,
     "executed_at": "2026-09-09T18:26:03.925Z",
+    "status": "SUCCESS",
+    "steps": [
+      {
+        "title": "Validating Authorization & Budget Approval",
+        "desc": "Allocating \u20b984,000 mitigation budget.",
+        "system": "SAP ERP Financials"
+      },
+      {
+        "title": "Generating Inter-Facility Transfer Orders",
+        "desc": "Routing surplus inventory from Mumbai and Delhi hubs with expedited freight tags.",
+        "system": "Warehouse Management System (WMS)"
+      },
+      {
+        "title": "Issuing Expedited Supplier Purchase Order",
+        "desc": "Transmitting electronic PO to Delta Dynamics with ISO 9001 quality audit check.",
+        "system": "Procurement EDI Gateway"
+      },
+      {
+        "title": "Re-Sequencing Customer Order Queue",
+        "desc": "Protecting priority enterprise SLA accounts to maintain 0 customer churn.",
+        "system": "Order Management System (OMS)"
+      }
+    ]
+  },
+  "EXEC_AUTO_SHIPMENT_SHP_7003_1789053007574": {
+    "execution_id": "EXEC_AUTO_SHIPMENT_SHP_7003_1789053007574",
+    "disruption_id": "DISR_AUTO_SHIPMENT_SHP_7003",
+    "strategy_id": "REDISTRIBUTE",
+    "strategy_name": "Multi-Warehouse Inventory Redistribution",
+    "authorized_budget": 84000,
+    "executed_at": "2026-09-10T15:10:07.574Z",
     "status": "SUCCESS",
     "steps": [
       {

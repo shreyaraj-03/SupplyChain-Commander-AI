@@ -1,25 +1,28 @@
-# SupplyChain Commander AI - Production Dockerfile for Google Cloud Run / Container Deployment
-
-# Base Image: Node 20 Slim
+# SupplyChain Commander AI - Production Dockerfile for Google Cloud Run
 FROM node:20-slim
 
-# Install Python 3 and system dependencies required for BigQuery & Multi-Agent Engine
+# Install Python 3, venv, and system certificates for BigQuery & Multi-Agent Engine
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
+    python3-venv \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Set up isolated Python virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Set working directory
 WORKDIR /app
 
-# Copy Node dependency manifests and install packages
+# Copy and install Node dependencies
 COPY package*.json ./
 RUN npm ci || npm install
 
-# Copy Python requirement manifest and install Python packages
+# Copy and install Python dependencies
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
 COPY . .
@@ -28,12 +31,10 @@ COPY . .
 ENV NODE_ENV=production
 RUN npm run build
 
-# Cloud Run default container port
+# Google Cloud Run default configuration
 EXPOSE 8080
-
-# Default container runtime variables
 ENV PORT=8080
-ENV PYTHON_BIN=python3
+ENV PYTHON_BIN=/opt/venv/bin/python
 
-# Start application server
+# Launch production server
 CMD ["node", "dist/server.cjs"]

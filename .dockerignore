@@ -3,7 +3,7 @@ dist
 .git
 .gitignore
 .env
-.env.local
+.env.*
 *.log
 .gemini
 __pycache__
@@ -13,3 +13,13 @@ __pycache__
 .pytest_cache
 scratch/
 gcp-key.json
+*.key.json
+*.serviceaccount.json
+venv/
+.venv/
+.vscode/
+.idea/
+test_*.js
+test_*.py
+.DS_Store
+Thumbs.db

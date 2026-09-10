@@ -1,0 +1,58 @@
+steps:
+  # 1. Build the Docker container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$COMMIT_SHA'
+      - '-t'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:latest'
+      - '.'
+
+  # 2. Push image to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME'
+
+  # 3. Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--image'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$COMMIT_SHA'
+      - '--region'
+      - '$_LOCATION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,BIGQUERY_DATASET=$_BIGQUERY_DATASET'
+
+substitutions:
+  _LOCATION: 'us-central1'
+  _REPO_NAME: 'supplychain-commander-repo'
+  _IMAGE_NAME: 'supplychain-commander-ai'
+  _SERVICE_NAME: 'supplychain-commander-ai'
+  _BIGQUERY_DATASET: 'supply_chain_analytics'
+
+images:
+  - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$COMMIT_SHA'
+  - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
