@@ -2,6 +2,18 @@
 
 This guide provides step-by-step instructions to build, configure, and deploy **SupplyChain Commander AI** to **Google Cloud Run** with **Google BigQuery** and **Artifact Registry**.
 
+## 🟢 Live Deployment
+
+| | |
+|---|---|
+| **Service URL** | https://supplychain-commander-ai-saompxgrba-uc.a.run.app |
+| **Health Check** | https://supplychain-commander-ai-saompxgrba-uc.a.run.app/api/health |
+| **Project** | `supplychain-commander` |
+| **Region** | `us-central1` |
+| **Config** | 512Mi RAM · 1 vCPU · 0–3 instances |
+
+> **Note:** Use `/api/health` (not `/healthz`) — GCP's GFE load balancer intercepts the `/healthz` path before it reaches the container.
+
 ---
 
 ## Prerequisites

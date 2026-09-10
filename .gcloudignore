@@ -1,0 +1,27 @@
+# .gcloudignore - Excludes files from Cloud Build source upload
+# These are build artifacts or local dependencies that are installed inside the container
+# (The Dockerfile runs npm ci and pip install, so these are not needed in the upload)
+
+node_modules/
+.venv/
+venv/
+dist/
+.git/
+.env
+.env.*
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.vscode/
+.idea/
+test_*.js
+test_*.py
+.DS_Store
+Thumbs.db
+gcp-key.json
+*.key.json
+*.serviceaccount.json
+assets/
